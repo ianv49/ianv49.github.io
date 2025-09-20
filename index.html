@@ -2,29 +2,54 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Weather Table</title>
+  <title>Weather & Solar Data</title>
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
     table {
       border-collapse: collapse;
-      width: 60%;
+      width: 80%;
       margin: 20px auto;
     }
     th, td {
       border: 1px solid #333;
       padding: 10px;
-      text-align: center;
+    }
+    input, button {
+      margin: 10px;
+      padding: 8px;
     }
   </style>
 </head>
 <body>
-  <h2 style="text-align:center;">🌦️ Weather Data Table</h2>
+  <h2>🌦️ Weather Data Table</h2>
+  <input type="text" id="cityInput" placeholder="Enter city (optional)">
+  <button onclick="loadWeatherData()">Refresh Weather</button>
   <table id="weatherTable">
     <thead>
       <tr>
         <th>City</th>
         <th>Temperature (°C)</th>
         <th>Humidity (%)</th>
+        <th>Pressure (hPa)</th>
         <th>Wind Speed (m/s)</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>🔆 Solar Data Table</h2>
+  <button onclick="loadSolarData()">Refresh Solar</button>
+  <table id="solarTable">
+    <thead>
+      <tr>
+        <th>City</th>
+        <th>Sunrise</th>
+        <th>Sunset</th>
+        <th>Day Length</th>
       </tr>
     </thead>
     <tbody></tbody>
