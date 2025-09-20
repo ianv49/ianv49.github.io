@@ -7,7 +7,7 @@
 
 ### Content 2
 - Description
-- Links
+- [Chadrick's Website Portfolio](https://chadrickson26.github.io/MyWebsitePortfolio/)
 
 # Learning
 - What do I know
