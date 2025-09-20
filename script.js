@@ -1,6 +1,8 @@
 const defaultCities = ['Manila', 'Tokyo', 'New York', 'London'];
-const weatherKey = 'wind1';
-const solarKey = 'solar1';
+//const weatherKey = 'wind1'; //0723d71a05e58ae3f7fc91e39a901e6b
+//const solarKey = 'solar1'; //e645925cfe8367841ad656678b7c3acc
+const weatherKey = '0723d71a05e58ae3f7fc91e39a901e6b'; 
+const solarKey = 'e645925cfe8367841ad656678b7c3acc'; 
 
 function loadWeatherData() {
   const cityInput = document.getElementById('cityInput').value.trim();
