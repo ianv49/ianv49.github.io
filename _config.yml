@@ -1,5 +1,6 @@
 title: AI-Driven Predictive Maintenance for Renewable Energy Assets
-logo: docs/assets/IMG_0986.jpeg
+#logo: docs/assets/IMG_0986.jpeg
+logo: docs/assets/logo_kalbariSun1.jpeg
 description: AI-Driven Predictive Maintenance for Renewable Energy Assets Using Web-Sourced Sensor Data
 #show_doanloads: true
 theme: jekyll-theme-minimal
