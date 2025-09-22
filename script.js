@@ -1,41 +1,34 @@
-// ✅ API keys for OpenWeather
-const windKey = '0723d71a05e58ae3f7fc91e39a901e6b';   // wind1
-const solarKey = 'e645925cfe8367841ad656678b7c3acc';  // solar1
+// API keys (replace with your own if needed)
+const windKey = '0723d71a05e58ae3f7fc91e39a901e6b'; // wind1
+const solarKey = 'e645925cfe8367841ad656678b7c3acc'; // solar1
 
-// ✅ Chart instances to manage updates
-let windSpeedChart, windPressureChart, windHumidityChart;
-let solarTempChart, solarHumidityChart, solarCloudChart;
+// Store chart instances for proper refresh
+const charts = {};
 
-// ✅ Main refresh function triggered by button
 function refreshData() {
   const city = document.getElementById('citySelect').value;
   loadWindData(city);
   loadSolarData(city);
 }
 
-// ✅ Load wind-related data and populate table + charts
 function loadWindData(city) {
   fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${windKey}`)
     .then(res => res.json())
     .then(data => {
       const tableBody = document.querySelector('#windTable tbody');
       tableBody.innerHTML = '';
-
       const windSpeeds = [], pressures = [], humidities = [], labels = [];
-
       for (let i = 0; i < 15; i++) {
         const entry = data.list[i];
         const dt = new Date(entry.dt * 1000).toLocaleString();
         const wind = entry.wind.speed;
         const pressure = entry.main.pressure;
         const humidity = entry.main.humidity;
-
         labels.push(dt);
         windSpeeds.push(wind);
         pressures.push(pressure);
         humidities.push(humidity);
-
-        // ✅ Create table row with color-coded cells
+        // Table row
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${dt}</td>
@@ -45,8 +38,7 @@ function loadWindData(city) {
         `;
         tableBody.appendChild(row);
       }
-
-      // ✅ Render charts
+      // Render charts
       drawBarChart('windSpeedChart', labels, windSpeeds, 'Wind Speed (m/s)', '#0077be');
       drawBarChart('windPressureChart', labels, pressures, 'Pressure (hPa)', '#00cc66');
       drawBarChart('windHumidityChart', labels, humidities, 'Humidity (%)', '#ff9933');
@@ -54,29 +46,24 @@ function loadWindData(city) {
     .catch(err => console.error('Error loading wind data:', err));
 }
 
-// ✅ Load solar-related data and populate table + charts
 function loadSolarData(city) {
   fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${solarKey}`)
     .then(res => res.json())
     .then(data => {
       const tableBody = document.querySelector('#solarTable tbody');
       tableBody.innerHTML = '';
-
       const temps = [], humidities = [], clouds = [], labels = [];
-
       for (let i = 0; i < 15; i++) {
         const entry = data.list[i];
         const dt = new Date(entry.dt * 1000).toLocaleString();
         const temp = entry.main.temp;
         const humidity = entry.main.humidity;
         const cloud = entry.clouds.all;
-
         labels.push(dt);
         temps.push(temp);
         humidities.push(humidity);
         clouds.push(cloud);
-
-        // ✅ Create table row with color-coded cells
+        // Table row
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${dt}</td>
@@ -86,8 +73,7 @@ function loadSolarData(city) {
         `;
         tableBody.appendChild(row);
       }
-
-      // ✅ Render charts
+      // Render charts
       drawBarChart('solarTempChart', labels, temps, 'Temperature (°C)', '#ff6666');
       drawBarChart('solarHumidityChart', labels, humidities, 'Humidity (%)', '#3399ff');
       drawBarChart('solarCloudChart', labels, clouds, 'Cloud Cover (%)', '#cccc00');
@@ -95,23 +81,16 @@ function loadSolarData(city) {
     .catch(err => console.error('Error loading solar data:', err));
 }
 
-// ✅ Draw bar chart with dynamic max/min highlighting
 function drawBarChart(canvasId, labels, data, label, baseColor) {
   const ctx = document.getElementById(canvasId).getContext('2d');
-  if (window[canvasId]) window[canvasId].destroy();
-
+  // Destroy previous chart instance if exists
+  if (charts[canvasId]) {
+    charts[canvasId].destroy();
+  }
   const max = Math.max(...data);
   const min = Math.min(...data);
-
-  // ✅ Assign colors based on value
-  const colors = data.map(val => {
-    if (val === max) return 'orange';
-    if (val === min) return 'lightblue';
-    return baseColor;
-  });
-
-  // ✅ Create chart
-  window[canvasId] = new Chart(ctx, {
+  const colors = data.map(val => val === max ? 'orange' : val === min ? 'lightblue' : baseColor);
+  charts[canvasId] = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: labels,
@@ -127,14 +106,12 @@ function drawBarChart(canvasId, labels, data, label, baseColor) {
         legend: { display: false },
         title: { display: true, text: label }
       },
-      scales: {
-        y: { beginAtZero: true }
-      }
+      scales: { y: { beginAtZero: true } }
     }
   });
 }
 
-// ✅ Utility to assign background color based on value range
+// Utility to assign background color based on value range
 function colorScale(value, array) {
   const max = Math.max(...array);
   const min = Math.min(...array);
@@ -143,5 +120,5 @@ function colorScale(value, array) {
   return '#ffffff';
 }
 
-// ✅ Initial load
+// Initial load
 refreshData();
