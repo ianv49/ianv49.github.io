@@ -126,10 +126,13 @@ function loadSolarData(city) {
     });
 }
 
-// ✅ Draw bar chart with dynamic max/min highlighting
+// ✅ Draw bar chart with dynamic max/min highlighting (fix destroy error)
 function drawBarChart(canvasId, labels, data, label, baseColor) {
   const ctx = document.getElementById(canvasId).getContext('2d');
-  if (window[canvasId]) window[canvasId].destroy();
+  // Fix: Only call destroy if the chart instance exists and has a destroy method
+  if (window[canvasId] && typeof window[canvasId].destroy === 'function') {
+    window[canvasId].destroy();
+  }
 
   const max = Math.max(...data);
   const min = Math.min(...data);
