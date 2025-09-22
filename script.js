@@ -30,15 +30,10 @@ function colorScale(value, array) {
   if (value === min) return 'lightblue';
   return '#ffffff';
 }
-function getNominalDateRange() {
-  const today = new Date();
-  const range = [];
-  for (let i = -2; i <= 5; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    range.push(formatDate(d));
-  }
-  return range;
+function getAvailableForecastDates(list, count = 7) {
+  // Only use dates present in the API data
+  const uniqueDates = [...new Set(list.map(item => formatDate(item.dt * 1000)))];
+  return uniqueDates.slice(0, count);
 }
 function nominalByDay(list, valueFn) {
   const grouped = {};
@@ -248,7 +243,8 @@ async function loadCityData(city) {
 
     if (!windData.list || !solarData.list) throw new Error("No data available for this city.");
 
-    const dateRange = getNominalDateRange();
+    // Only use available forecast dates (fix for empty tables)
+    const dateRange = getAvailableForecastDates(windData.list, 7);
 
     renderSummary(city, windData, solarData);
     loadWindData(city, windData, dateRange);
