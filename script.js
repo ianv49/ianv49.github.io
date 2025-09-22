@@ -9,15 +9,26 @@ let solarTempChart, solarHumidityChart, solarCloudChart;
 // ✅ Main refresh function triggered by button
 function refreshData() {
   const city = document.getElementById('citySelect').value;
-  loadWindData(city);
-  loadSolarData(city);
+  const refreshBtn = document.getElementById('refreshBtn');
+  if (refreshBtn) refreshBtn.disabled = true; // Disable button during load
+
+  Promise.all([
+    loadWindData(city),
+    loadSolarData(city)
+  ]).finally(() => {
+    if (refreshBtn) refreshBtn.disabled = false; // Re-enable button after load
+  });
 }
 
 // ✅ Load wind-related data and populate table + charts
 function loadWindData(city) {
-  fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${windKey}`)
-    .then(res => res.json())
+  return fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${windKey}`)
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to fetch wind data');
+      return res.json();
+    })
     .then(data => {
+      if (!data.list) throw new Error(data.message || 'Invalid wind data');
       const tableBody = document.querySelector('#windTable tbody');
       tableBody.innerHTML = '';
 
@@ -51,14 +62,26 @@ function loadWindData(city) {
       drawBarChart('windPressureChart', labels, pressures, 'Pressure (hPa)', '#00cc66');
       drawBarChart('windHumidityChart', labels, humidities, 'Humidity (%)', '#ff9933');
     })
-    .catch(err => console.error('Error loading wind data:', err));
+    .catch(err => {
+      const tableBody = document.querySelector('#windTable tbody');
+      tableBody.innerHTML = `<tr><td colspan="4" style="color:red;">${err.message}</td></tr>`;
+      // Optionally clear charts or show error state
+      drawBarChart('windSpeedChart', [], [], 'Wind Speed (m/s)', '#0077be');
+      drawBarChart('windPressureChart', [], [], 'Pressure (hPa)', '#00cc66');
+      drawBarChart('windHumidityChart', [], [], 'Humidity (%)', '#ff9933');
+      console.error('Error loading wind data:', err);
+    });
 }
 
 // ✅ Load solar-related data and populate table + charts
 function loadSolarData(city) {
-  fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${solarKey}`)
-    .then(res => res.json())
+  return fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${solarKey}`)
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to fetch solar data');
+      return res.json();
+    })
     .then(data => {
+      if (!data.list) throw new Error(data.message || 'Invalid solar data');
       const tableBody = document.querySelector('#solarTable tbody');
       tableBody.innerHTML = '';
 
@@ -92,7 +115,15 @@ function loadSolarData(city) {
       drawBarChart('solarHumidityChart', labels, humidities, 'Humidity (%)', '#3399ff');
       drawBarChart('solarCloudChart', labels, clouds, 'Cloud Cover (%)', '#cccc00');
     })
-    .catch(err => console.error('Error loading solar data:', err));
+    .catch(err => {
+      const tableBody = document.querySelector('#solarTable tbody');
+      tableBody.innerHTML = `<tr><td colspan="4" style="color:red;">${err.message}</td></tr>`;
+      // Optionally clear charts or show error state
+      drawBarChart('solarTempChart', [], [], 'Temperature (°C)', '#ff6666');
+      drawBarChart('solarHumidityChart', [], [], 'Humidity (%)', '#3399ff');
+      drawBarChart('solarCloudChart', [], [], 'Cloud Cover (%)', '#cccc00');
+      console.error('Error loading solar data:', err);
+    });
 }
 
 // ✅ Draw bar chart with dynamic max/min highlighting
