@@ -79,7 +79,7 @@
     <p>Using Web-Sourced Sensor Data</p>
   </header>
 
-  <select id="citySelect">
+<div id="cityTabs" style="display:flex;justify-content:center;gap:10px;margin:20px 0;"></div>
     <option value="Manila">Manila</option>
     <option value="Tokyo">Tokyo</option>
     <option value="Jakarta">Jakarta</option>
@@ -90,8 +90,7 @@
     <option value="Seoul">Seoul</option>
     <option value="Beijing">Beijing</option>
     <option value="New Delhi">New Delhi</option>
-  </select>
-  <button onclick="refreshData()">🔄 Refresh Data</button>
+<div id="summaryBox" style="max-width:600px;margin:0 auto 20px auto;padding:16px;background:#e6f7ff;border-radius:8px;border:1px solid #b3e0ff;font-size:1em;text-align:left;"></div>
 
   <h2>🌬️ Wind Energy Charts</h2>
   <div class="chart-row">
