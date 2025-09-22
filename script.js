@@ -16,18 +16,15 @@ const cities = [
   { name: "New Delhi", code: "New Delhi" }
 ];
 
-// ✅ Chart instances to manage updates
-let windSpeedChart, windPressureChart, windHumidityChart;
-let solarTempChart, solarHumidityChart, solarCloudChart;
-
 // Utility: Get day name from date object
 function getDayName(dateObj) {
   return dateObj.toLocaleDateString(undefined, { weekday: 'short' });
 }
 
-// Utility: Get time from date object
-function getTime(dateObj) {
-  return dateObj.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+// Utility: Format date as YYYY-MM-DD
+function formatDate(dt) {
+  const d = new Date(dt);
+  return d.toISOString().split('T')[0];
 }
 
 // Utility: Assign background color based on min/max
@@ -39,31 +36,33 @@ function colorScale(value, array) {
   return '#ffffff'; // base color for all others
 }
 
-// Utility: Format date as YYYY-MM-DD
-function formatDate(dt) {
-  const d = new Date(dt);
-  return d.toISOString().split('T')[0];
-}
-
-// Utility: Group and average data by date
-function groupByDay(list, valueFn) {
+// Utility: Get nominal value (median) for each day
+function nominalByDay(list, valueFn) {
   const grouped = {};
   list.forEach(item => {
     const date = formatDate(item.dt * 1000);
     if (!grouped[date]) grouped[date] = [];
     grouped[date].push(valueFn(item));
   });
-  // Average per day
-  return Object.entries(grouped).map(([date, values]) => ({
-    date,
-    avg: values.reduce((a, b) => a + b, 0) / values.length
-  }));
+  // Median per day
+  return Object.entries(grouped).map(([date, values]) => {
+    values.sort((a, b) => a - b);
+    const mid = Math.floor(values.length / 2);
+    const nominal = values.length % 2 !== 0 ? values[mid] : (values[mid - 1] + values[mid]) / 2;
+    return { date, nominal };
+  });
 }
 
-// Utility: Get up to 7 unique forecast dates
-function getDateRange(list) {
-  const uniqueDates = [...new Set(list.map(item => formatDate(item.dt * 1000)))];
-  return uniqueDates.slice(0, 7);
+// Utility: Get date range: past 2 days, today, next 5 days
+function getNominalDateRange() {
+  const today = new Date();
+  const range = [];
+  for (let i = -2; i <= 5; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    range.push(formatDate(d));
+  }
+  return range;
 }
 
 // Draw bar chart with dynamic min/max y-axis
@@ -98,23 +97,13 @@ function drawBarChart(canvasId, labels, data, label, baseColor) {
       }]
     },
     options: {
+      indexAxis: 'y',
       responsive: true,
       plugins: {
         legend: { display: false },
         title: { display: true, text: label }
       },
       scales: {
-        x: {
-          ticks: {
-            autoSkip: false,
-            maxRotation: 45,
-            minRotation: 0,
-            callback: function(value, index) {
-              if (labels.length > 10 && index % 2 !== 0) return '';
-              return labels[index];
-            }
-          }
-        },
         y: {
           beginAtZero: false,
           min: Math.floor(min - (max - min) * 0.1),
@@ -132,16 +121,21 @@ function renderSummary(city, windData, solarData) {
     box.textContent = "No data available for summary.";
     return;
   }
-  const windSpeedAvg = (windData.list.reduce((a, b) => a + b.wind.speed, 0) / windData.list.length).toFixed(2);
-  const windHumidityAvg = (windData.list.reduce((a, b) => a + b.main.humidity, 0) / windData.list.length).toFixed(1);
-  const solarTempAvg = (solarData.list.reduce((a, b) => a + b.main.temp, 0) / solarData.list.length).toFixed(1);
-  const solarCloudAvg = (solarData.list.reduce((a, b) => a + b.clouds.all, 0) / solarData.list.length).toFixed(1);
+  const windSpeedNom = nominalByDay(windData.list, item => item.wind.speed).map(d => d.nominal);
+  const windHumidityNom = nominalByDay(windData.list, item => item.main.humidity).map(d => d.nominal);
+  const solarTempNom = nominalByDay(solarData.list, item => item.main.temp).map(d => d.nominal);
+  const solarCloudNom = nominalByDay(solarData.list, item => item.clouds.all).map(d => d.nominal);
+
+  const windSpeedAvg = (windSpeedNom.reduce((a, b) => a + b, 0) / windSpeedNom.length).toFixed(2);
+  const windHumidityAvg = (windHumidityNom.reduce((a, b) => a + b, 0) / windHumidityNom.length).toFixed(1);
+  const solarTempAvg = (solarTempNom.reduce((a, b) => a + b, 0) / solarTempNom.length).toFixed(1);
+  const solarCloudAvg = (solarCloudNom.reduce((a, b) => a + b, 0) / solarCloudNom.length).toFixed(1);
 
   box.innerHTML = `
     <b>Summary for ${city.name}:</b><br>
-    Over the next 7 days, the average wind speed is <b>${windSpeedAvg} m/s</b> with humidity around <b>${windHumidityAvg}%</b>.
-    Solar temperatures are expected to average <b>${solarTempAvg}°C</b> with cloud cover near <b>${solarCloudAvg}%</b>.
-    These conditions provide a balanced outlook for both wind and solar energy generation in ${city.name}.
+    For the period, the nominal wind speed is <b>${windSpeedAvg} m/s</b> and humidity is <b>${windHumidityAvg}%</b>.
+    Solar temperature is typically <b>${solarTempAvg}°C</b> with cloud cover near <b>${solarCloudAvg}%</b>.
+    These nominal values reflect the central tendency for wind and solar energy in ${city.name}.
   `;
 }
 
@@ -150,45 +144,42 @@ function loadWindData(city, windData, dateRange) {
   const tableBody = document.querySelector('#windTable tbody');
   tableBody.innerHTML = '';
 
-  // Group by day and average
-  const windSpeed = groupByDay(windData.list, item => item.wind.speed);
-  const windPressure = groupByDay(windData.list, item => item.main.pressure);
-  const windHumidity = groupByDay(windData.list, item => item.main.humidity);
+  // Nominal (median) per day
+  const windSpeedNom = nominalByDay(windData.list, item => item.wind.speed);
+  const windPressureNom = nominalByDay(windData.list, item => item.main.pressure);
+  const windHumidityNom = nominalByDay(windData.list, item => item.main.humidity);
 
-  // Only show 7 days
+  // Filter for date range and sort ascending by value
   const days = dateRange;
-  // For each day, find all entries for that day
-  const dayEntries = days.map(date =>
-    windData.list.filter(item => formatDate(item.dt * 1000) === date)
-  );
+  const rows = days.map(date => {
+    return {
+      date,
+      day: getDayName(new Date(date)),
+      wind: windSpeedNom.find(d => d.date === date)?.nominal ?? null,
+      pressure: windPressureNom.find(d => d.date === date)?.nominal ?? null,
+      humidity: windHumidityNom.find(d => d.date === date)?.nominal ?? null
+    };
+  }).filter(r => r.wind !== null && r.pressure !== null && r.humidity !== null);
 
-  // Flatten all values for min/max coloring
-  const windSpeeds = dayEntries.flat().map(item => item.wind.speed);
-  const pressures = dayEntries.flat().map(item => item.main.pressure);
-  const humidities = dayEntries.flat().map(item => item.main.humidity);
+  // Rank ascending by wind speed
+  rows.sort((a, b) => a.wind - b.wind);
+
+  // For coloring
+  const windArr = rows.map(r => r.wind);
+  const pressureArr = rows.map(r => r.pressure);
+  const humidityArr = rows.map(r => r.humidity);
 
   // Table
-  for (let d = 0; d < days.length; d++) {
-    for (const entry of dayEntries[d]) {
-      const dtObj = new Date(entry.dt * 1000);
-      const date = dtObj.toLocaleDateString();
-      const day = getDayName(dtObj);
-      const time = getTime(dtObj);
-      const wind = entry.wind.speed;
-      const pressure = entry.main.pressure;
-      const humidity = entry.main.humidity;
-
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${date}</td>
-        <td>${day}</td>
-        <td>${time}</td>
-        <td style="background:${colorScale(wind, windSpeeds)}">${wind}</td>
-        <td style="background:${colorScale(pressure, pressures)}">${pressure}</td>
-        <td style="background:${colorScale(humidity, humidities)}">${humidity}</td>
-      `;
-      tableBody.appendChild(row);
-    }
+  for (const rowData of rows) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${rowData.date}</td>
+      <td>${rowData.day}</td>
+      <td style="background:${colorScale(rowData.wind, windArr)}">${rowData.wind}</td>
+      <td style="background:${colorScale(rowData.pressure, pressureArr)}">${rowData.pressure}</td>
+      <td style="background:${colorScale(rowData.humidity, humidityArr)}">${rowData.humidity}</td>
+    `;
+    tableBody.appendChild(row);
   }
 
   // Update table headers
@@ -196,30 +187,16 @@ function loadWindData(city, windData, dateRange) {
     <tr>
       <th>Date</th>
       <th>Day</th>
-      <th>Time</th>
       <th>Wind Speed (m/s)</th>
       <th>Pressure (hPa)</th>
       <th>Humidity (%)</th>
     </tr>
   `;
 
-  // For charts, use daily averages
-  const windSpeedAvgs = days.map(date => {
-    const v = windSpeed.find(val => val.date === date);
-    return v ? v.avg : null;
-  });
-  const pressureAvgs = days.map(date => {
-    const v = windPressure.find(val => val.date === date);
-    return v ? v.avg : null;
-  });
-  const humidityAvgs = days.map(date => {
-    const v = windHumidity.find(val => val.date === date);
-    return v ? v.avg : null;
-  });
-
-  drawBarChart('windSpeedChart', days, windSpeedAvgs, 'Wind Speed (m/s)', '#0077be');
-  drawBarChart('windPressureChart', days, pressureAvgs, 'Pressure (hPa)', '#00cc66');
-  drawBarChart('windHumidityChart', days, humidityAvgs, 'Humidity (%)', '#ff9933');
+  // For charts, use the same sorted data
+  drawBarChart('windSpeedChart', rows.map(r => r.day), windArr, 'Wind Speed (m/s)', '#0077be');
+  drawBarChart('windPressureChart', rows.map(r => r.day), pressureArr, 'Pressure (hPa)', '#00cc66');
+  drawBarChart('windHumidityChart', rows.map(r => r.day), humidityArr, 'Humidity (%)', '#ff9933');
 }
 
 // --- SOLAR DATA TABLE ---
@@ -227,44 +204,42 @@ function loadSolarData(city, solarData, dateRange) {
   const tableBody = document.querySelector('#solarTable tbody');
   tableBody.innerHTML = '';
 
-  // Group by day and average
-  const solarTemp = groupByDay(solarData.list, item => item.main.temp);
-  const solarHumidity = groupByDay(solarData.list, item => item.main.humidity);
-  const solarCloud = groupByDay(solarData.list, item => item.clouds.all);
+  // Nominal (median) per day
+  const solarTempNom = nominalByDay(solarData.list, item => item.main.temp);
+  const solarHumidityNom = nominalByDay(solarData.list, item => item.main.humidity);
+  const solarCloudNom = nominalByDay(solarData.list, item => item.clouds.all);
 
-  // Only show 7 days
+  // Filter for date range and sort ascending by value
   const days = dateRange;
-  const dayEntries = days.map(date =>
-    solarData.list.filter(item => formatDate(item.dt * 1000) === date)
-  );
+  const rows = days.map(date => {
+    return {
+      date,
+      day: getDayName(new Date(date)),
+      temp: solarTempNom.find(d => d.date === date)?.nominal ?? null,
+      humidity: solarHumidityNom.find(d => d.date === date)?.nominal ?? null,
+      cloud: solarCloudNom.find(d => d.date === date)?.nominal ?? null
+    };
+  }).filter(r => r.temp !== null && r.humidity !== null && r.cloud !== null);
 
-  // Flatten all values for min/max coloring
-  const temps = dayEntries.flat().map(item => item.main.temp);
-  const humidities = dayEntries.flat().map(item => item.main.humidity);
-  const clouds = dayEntries.flat().map(item => item.clouds.all);
+  // Rank ascending by temperature
+  rows.sort((a, b) => a.temp - b.temp);
+
+  // For coloring
+  const tempArr = rows.map(r => r.temp);
+  const humidityArr = rows.map(r => r.humidity);
+  const cloudArr = rows.map(r => r.cloud);
 
   // Table
-  for (let d = 0; d < days.length; d++) {
-    for (const entry of dayEntries[d]) {
-      const dtObj = new Date(entry.dt * 1000);
-      const date = dtObj.toLocaleDateString();
-      const day = getDayName(dtObj);
-      const time = getTime(dtObj);
-      const temp = entry.main.temp;
-      const humidity = entry.main.humidity;
-      const cloud = entry.clouds.all;
-
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${date}</td>
-        <td>${day}</td>
-        <td>${time}</td>
-        <td style="background:${colorScale(temp, temps)}">${temp}</td>
-        <td style="background:${colorScale(humidity, humidities)}">${humidity}</td>
-        <td style="background:${colorScale(cloud, clouds)}">${cloud}</td>
-      `;
-      tableBody.appendChild(row);
-    }
+  for (const rowData of rows) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${rowData.date}</td>
+      <td>${rowData.day}</td>
+      <td style="background:${colorScale(rowData.temp, tempArr)}">${rowData.temp}</td>
+      <td style="background:${colorScale(rowData.humidity, humidityArr)}">${rowData.humidity}</td>
+      <td style="background:${colorScale(rowData.cloud, cloudArr)}">${rowData.cloud}</td>
+    `;
+    tableBody.appendChild(row);
   }
 
   // Update table headers
@@ -272,30 +247,16 @@ function loadSolarData(city, solarData, dateRange) {
     <tr>
       <th>Date</th>
       <th>Day</th>
-      <th>Time</th>
       <th>Temperature (°C)</th>
       <th>Humidity (%)</th>
       <th>Cloud Cover (%)</th>
     </tr>
   `;
 
-  // For charts, use daily averages
-  const tempAvgs = days.map(date => {
-    const v = solarTemp.find(val => val.date === date);
-    return v ? v.avg : null;
-  });
-  const humidityAvgs = days.map(date => {
-    const v = solarHumidity.find(val => val.date === date);
-    return v ? v.avg : null;
-  });
-  const cloudAvgs = days.map(date => {
-    const v = solarCloud.find(val => val.date === date);
-    return v ? v.avg : null;
-  });
-
-  drawBarChart('solarTempChart', days, tempAvgs, 'Temperature (°C)', '#ff6666');
-  drawBarChart('solarHumidityChart', days, humidityAvgs, 'Humidity (%)', '#3399ff');
-  drawBarChart('solarCloudChart', days, cloudAvgs, 'Cloud Cover (%)', '#cccc00');
+  // For charts, use the same sorted data
+  drawBarChart('solarTempChart', rows.map(r => r.day), tempArr, 'Temperature (°C)', '#ff6666');
+  drawBarChart('solarHumidityChart', rows.map(r => r.day), humidityArr, 'Humidity (%)', '#3399ff');
+  drawBarChart('solarCloudChart', rows.map(r => r.day), cloudArr, 'Cloud Cover (%)', '#cccc00');
 }
 
 // Main function to load all data for a city
@@ -311,15 +272,15 @@ async function loadCityData(city) {
 
     if (!windData.list || !solarData.list) throw new Error("No data available for this city.");
 
-    const dateRange = getDateRange(windData.list);
+    const dateRange = getNominalDateRange();
 
     renderSummary(city, windData, solarData);
     loadWindData(city, windData, dateRange);
     loadSolarData(city, solarData, dateRange);
   } catch (err) {
     document.getElementById('summaryBox').textContent = "Error loading data: " + err.message;
-    document.querySelector('#windTable tbody').innerHTML = `<tr><td colspan="6" style="color:red;">${err.message}</td></tr>`;
-    document.querySelector('#solarTable tbody').innerHTML = `<tr><td colspan="6" style="color:red;">${err.message}</td></tr>`;
+    document.querySelector('#windTable tbody').innerHTML = `<tr><td colspan="5" style="color:red;">${err.message}</td></tr>`;
+    document.querySelector('#solarTable tbody').innerHTML = `<tr><td colspan="5" style="color:red;">${err.message}</td></tr>`;
     drawBarChart('windSpeedChart', [], [], 'Wind Speed (m/s)', '#0077be');
     drawBarChart('windPressureChart', [], [], 'Pressure (hPa)', '#00cc66');
     drawBarChart('windHumidityChart', [], [], 'Humidity (%)', '#ff9933');
@@ -362,5 +323,50 @@ function setupTabs() {
   loadCityData(cities[0]);
 }
 
+// Layout adjustment: charts left (vertical), table right
+function adjustLayout() {
+  const windCharts = document.querySelectorAll('#windSpeedChart, #windPressureChart, #windHumidityChart');
+  const solarCharts = document.querySelectorAll('#solarTempChart, #solarHumidityChart, #solarCloudChart');
+  // Wrap charts in a vertical flex container
+  const windChartCol = document.createElement('div');
+  windChartCol.style.display = 'flex';
+  windChartCol.style.flexDirection = 'column';
+  windChartCol.style.gap = '16px';
+  windChartCol.style.alignItems = 'center';
+  windCharts.forEach(c => windChartCol.appendChild(c));
+  const windTable = document.getElementById('windTable');
+  const windRow = document.createElement('div');
+  windRow.style.display = 'flex';
+  windRow.style.justifyContent = 'center';
+  windRow.style.alignItems = 'flex-start';
+  windRow.style.gap = '24px';
+  windRow.appendChild(windChartCol);
+  windRow.appendChild(windTable);
+  windTable.parentNode.insertBefore(windRow, windTable);
+  windTable.style.width = '320px';
+  windTable.style.fontSize = '0.95em';
+
+  const solarChartCol = document.createElement('div');
+  solarChartCol.style.display = 'flex';
+  solarChartCol.style.flexDirection = 'column';
+  solarChartCol.style.gap = '16px';
+  solarChartCol.style.alignItems = 'center';
+  solarCharts.forEach(c => solarChartCol.appendChild(c));
+  const solarTable = document.getElementById('solarTable');
+  const solarRow = document.createElement('div');
+  solarRow.style.display = 'flex';
+  solarRow.style.justifyContent = 'center';
+  solarRow.style.alignItems = 'flex-start';
+  solarRow.style.gap = '24px';
+  solarRow.appendChild(solarChartCol);
+  solarRow.appendChild(solarTable);
+  solarTable.parentNode.insertBefore(solarRow, solarTable);
+  solarTable.style.width = '320px';
+  solarTable.style.fontSize = '0.95em';
+}
+
 // Initial load
-window.onload = setupTabs;
+window.onload = function() {
+  setupTabs();
+  setTimeout(adjustLayout, 500); // Wait for DOM to render
+};
