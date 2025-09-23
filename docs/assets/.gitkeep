@@ -1,0 +1,4 @@
+echo "" > docs/assets/.gitkeep
+git add docs/assets/.gitkeep
+git commit -m "chore: create assets folder"
+git push
