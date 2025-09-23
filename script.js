@@ -1,11 +1,17 @@
 // ===== OpenWeather API Keys (live fetch only) =====
-const windKey  = '0723d71a05e58ae3f7fc91e39a901e6b';   // wind1
-const solarKey = 'e645925cfe8367841ad656678b7c3acc';    // solar1
+const API_KEY = '0723d71a05e58ae3f7fc91e39a901e6b'; // reuse for all calls
+
+// ===== City coordinates (for timemachine "yesterday") =====
+const CITY_COORDS = {
+  'Manila': { lat: 14.5995, lon: 120.9842 },
+  'Taipei': { lat: 25.0330, lon: 121.5654 },
+  'Hanoi' : { lat: 21.0278, lon: 105.8342 },
+};
 
 // ===== Chart registry & helpers =====
 const charts = {}; // { [canvasId]: Chart }
 
-// Wait until a canvas has non-zero size (prevents blank charts on some layouts)
+// Wait until a canvas has non-zero size (prevents blank charts)
 async function waitForCanvas(canvas, timeoutMs = 1200) {
   const start = performance.now();
   while (performance.now() - start < timeoutMs) {
@@ -14,7 +20,6 @@ async function waitForCanvas(canvas, timeoutMs = 1200) {
     if (w > 0 && h > 0) return;
     await new Promise(r => requestAnimationFrame(r));
   }
-  // Fallback explicit height if layout took too long
   canvas.style.height = canvas.style.height || '280px';
 }
 
@@ -39,15 +44,13 @@ async function drawBarChart(canvasId, labels, values, title) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
 
-  // Wait for the canvas to be visible and sized
   await waitForCanvas(canvas);
 
-  // Destroy old instance safely
   if (charts[canvasId]) {
-    try { charts[canvasId].destroy(); } catch (e) { /* ignore */ }
+    try { charts[canvasId].destroy(); } catch (_) {}
   }
 
-  const ctx = canvas.getContext('2d', { willReadFrequently: false });
+  const ctx = canvas.getContext('2d');
 
   charts[canvasId] = new Chart(ctx, {
     type: 'bar',
@@ -63,8 +66,8 @@ async function drawBarChart(canvasId, labels, values, title) {
     },
     options: {
       responsive: true,
-      maintainAspectRatio: false, // use explicit CSS height
-      animation: false,           // reduce flicker on quick updates
+      maintainAspectRatio: false,
+      animation: false,
       plugins: {
         legend: { display: false },
         title: { display: true, text: title, color:'#0f172a', font:{weight:'600'} },
@@ -75,203 +78,325 @@ async function drawBarChart(canvasId, labels, values, title) {
         }
       },
       scales: {
-        x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 6 }, grid:{ display:false } },
+        x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }, grid:{ display:false } },
         y: { beginAtZero: true, grid:{ color:'rgba(148,163,184,0.25)' } }
       }
     }
   });
 }
 
-// Optional: keep charts healthy on container resizes
+// Keep charts healthy on container resizes
 const ro = new ResizeObserver(() => {
   Object.values(charts).forEach(ch => { try { ch.resize(); } catch (_) {} });
 });
 document.querySelectorAll('.chart-tile').forEach(el => ro.observe(el));
 
-// ===== Tabs handling (no dropdown, no manual refresh) =====
+// ===== Tabs handling (3 capitals) =====
 const tabsEl = document.getElementById('tabs');
 let activeCity = document.querySelector('.tab.active')?.dataset.city || 'Manila';
 
 tabsEl.addEventListener('click', (e) => {
   const btn = e.target.closest('.tab');
-  if (!btn) return;
-  if (btn.classList.contains('active')) return;
+  if (!btn || btn.classList.contains('active')) return;
 
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   activeCity = btn.dataset.city;
 
-  // Defer to next frame so layout settles before charts render
   requestAnimationFrame(() => loadCity(activeCity));
 });
 
-// ===== Utilities =====
-function splitDateParts(dateObj) {
-  // ISO-like for stable sorting: YYYY-MM-DD
-  const date = dateObj.toLocaleDateString('en-CA'); // e.g., 2025-09-23
-  const day  = dateObj.toLocaleDateString(undefined, { weekday: 'long' });
-  const time = dateObj.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
-  return { date, day, time };
+// ===== Date utilities using city timezone offset =====
+const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+function toCityDatePartsFromUnix(unixSec, tzOffsetSec) {
+  // Create a shifted Date so UTC getters reflect city-local values
+  const d = new Date((unixSec + tzOffsetSec) * 1000);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2,'0');
+  const dd = String(d.getUTCDate()).padStart(2,'0');
+  const hh = String(d.getUTCHours()).padStart(2,'0');
+  const mm = String(d.getUTCMinutes()).padStart(2,'0');
+  const dateISO = `${y}-${m}-${dd}`;
+  const dayName = DAY_NAMES[d.getUTCDay()];
+  const time = `${hh}:${mm}`;
+  return { dateISO, dayName, time };
 }
+
+function cityTodayISO(tzOffsetSec) {
+  const nowUtc = Math.floor(Date.now() / 1000);
+  const d = new Date((nowUtc + tzOffsetSec) * 1000);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2,'0');
+  const dd = String(d.getUTCDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+
+function shiftISO(iso, days) {
+  const [y,m,d] = iso.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m-1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  const yy = dt.getUTCFullYear();
+  const mm = String(dt.getUTCMonth()+1).padStart(2,'0');
+  const dd = String(dt.getUTCDate()).padStart(2,'0');
+  return `${yy}-${mm}-${dd}`;
+}
+
 const round = (x, d=2) => (typeof x === 'number' ? +x.toFixed(d) : x);
 
-function appendRow(tbody, cells) {
+// ===== Fetch helpers (live only) =====
+async function fetchForecastByCity(city) {
+  const url = `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&units=metric&appid=${API_KEY}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Forecast fetch failed: ${res.status}`);
+  return res.json();
+}
+
+async function fetchYesterdayHourly(lat, lon, targetUnixUtc) {
+  // OpenWeather 2.5 timemachine (hourly) - availability depends on plan
+  const url = `https://api.openweathermap.org/data/2.5/onecall/timemachine?lat=${lat}&lon=${lon}&dt=${targetUnixUtc}&units=metric&appid=${API_KEY}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Timemachine fetch failed: ${res.status}`);
+  return res.json();
+}
+
+// ===== Selection: 3 yesterday, 4 today, 3 tomorrow (up to 10) =====
+async function selectTenEntries(city, forecastJson) {
+  const tzOffset = forecastJson?.city?.timezone ?? 0; // seconds
+  const todayISO = cityTodayISO(tzOffset);
+  const tomorrowISO = shiftISO(todayISO, 1);
+  const yesterdayISO = shiftISO(todayISO, -1);
+
+  // Build "today" & "tomorrow" from forecast (3-hour steps)
+  const list = Array.isArray(forecastJson.list) ? forecastJson.list : [];
+
+  function isoForItem(item) {
+    const { dateISO } = toCityDatePartsFromUnix(item.dt, tzOffset);
+    return dateISO;
+  }
+
+  const todayItems = list.filter(x => isoForItem(x) === todayISO).slice(0, 4);
+  const tomorrowItems = list.filter(x => isoForItem(x) === tomorrowISO).slice(0, 3);
+
+  // Build "yesterday" via timemachine (hourly), if available
+  let yesterdayItems = [];
+  let yesterdayWarn = '';
+
+  try {
+    const coords = CITY_COORDS[city];
+    if (!coords) throw new Error('Missing city coords');
+
+    // Aim at yesterday 12:00 city-local converted to UTC seconds
+    // Compute yesterday noon city-local -> UTC
+    const [y, m, d] = yesterdayISO.split('-').map(Number);
+    const noonLocal = Date.UTC(y, m-1, d, 12, 0, 0); // define at UTC then subtract tzOffset to get UTC instant
+    const noonUtc = Math.floor(noonLocal / 1000) - tzOffset;
+
+    const hist = await fetchYesterdayHourly(coords.lat, coords.lon, noonUtc);
+    const hourly = Array.isArray(hist.hourly) ? hist.hourly : [];
+
+    // Pick 3 reasonably spread hours: ~06:00, 12:00, 18:00 city-local
+    const targetsLocal = [6, 12, 18];
+    const picks = [];
+    for (const hTarget of targetsLocal) {
+      // Find hour closest to target local hour
+      let best = null, bestDiff = 1e9;
+      hourly.forEach(h => {
+        const parts = toCityDatePartsFromUnix(h.dt, hist.timezone_offset ?? tzOffset);
+        const hour = parseInt(parts.time.slice(0,2), 10);
+        const diff = Math.abs(hour - hTarget);
+        if (parts.dateISO === yesterdayISO && diff < bestDiff) { best = h; bestDiff = diff; }
+      });
+      if (best) picks.push(best);
+    }
+    // Ensure uniqueness and limit to 3
+    const unique = [];
+    const seen = new Set();
+    for (const p of picks) {
+      if (!seen.has(p.dt)) { unique.push(p); seen.add(p.dt); }
+    }
+    // If fewer than 3 found, fill with earliest yesterday hours from hourly
+    if (unique.length < 3) {
+      const extras = hourly
+        .filter(h => toCityDatePartsFromUnix(h.dt, hist.timezone_offset ?? tzOffset).dateISO === yesterdayISO)
+        .sort((a,b) => a.dt - b.dt);
+      for (const e of extras) {
+        if (unique.length >= 3) break;
+        if (!seen.has(e.dt)) { unique.push(e); seen.add(e.dt); }
+      }
+    }
+    yesterdayItems = unique.slice(0,3).map(h => ({ _hist:true, ...h }));
+    if (yesterdayItems.length < 3) {
+      yesterdayWarn = 'Historical (yesterday) data partially unavailable from API.';
+    }
+  } catch (err) {
+    console.warn('Yesterday fetch warning:', err);
+    yesterdayWarn = 'Historical (yesterday) data unavailable from your API plan or due to network limits.';
+  }
+
+  // Combine: 3 yesterday + 4 today + 3 tomorrow (up to 10)
+  const combined = [];
+  // Yesterday
+  for (const y of yesterdayItems.slice(0,3)) {
+    combined.push(y);
+  }
+  // Today
+  for (const t of todayItems) {
+    combined.push(t);
+    if (combined.length >= 3 + 4) break;
+  }
+  // Tomorrow
+  for (const n of tomorrowItems) {
+    combined.push(n);
+    if (combined.length >= 10) break;
+  }
+
+  // If we still have fewer than 10 due to scarcity, pad more from tomorrow
+  if (combined.length < 10) {
+    const moreTomorrow = list.filter(x => isoForItem(x) === tomorrowISO).slice(tomorrowItems.length);
+    for (const n of moreTomorrow) { combined.push(n); if (combined.length >= 10) break; }
+  }
+
+  return { combined, tzOffset, yesterdayISO, todayISO, tomorrowISO, yesterdayWarn };
+}
+
+// ===== Renderers =====
+function clearTable(tbody) { tbody.innerHTML = ''; }
+
+function pushWindRow(tbody, parts, metrics) {
   const tr = document.createElement('tr');
-  tr.innerHTML = cells.map(c => `<td>${c}</td>`).join('');
+  tr.innerHTML = `
+    <td>${parts.dateISO}</td>
+    <td>${parts.dayName}</td>
+    <td>${parts.time}</td>
+    <td>${metrics.windSpeed}</td>
+    <td>${metrics.pressure}</td>
+    <td>${metrics.humidity}</td>
+  `;
   tbody.appendChild(tr);
 }
 
-function summarizeByDate(rows, fields) {
-  // rows: [{date, metrics:{...}}]
-  const map = new Map();
-  rows.forEach(r => {
-    if (!map.has(r.date)) map.set(r.date, []);
-    map.get(r.date).push(r.metrics);
-  });
-
-  const out = [];
-  for (const [date, list] of map.entries()) {
-    const s = { date };
-    for (const f of fields) {
-      const vals = list.map(x => x[f]).filter(v => typeof v === 'number' && !Number.isNaN(v));
-      if (!vals.length) { s[`avg_${f}`]=s[`min_${f}`]=s[`max_${f}`]=null; continue; }
-      const sum = vals.reduce((a,b)=>a+b,0);
-      s[`avg_${f}`] = round(sum/vals.length,2);
-      s[`min_${f}`] = round(Math.min(...vals),2);
-      s[`max_${f}`] = round(Math.max(...vals),2);
-    }
-    out.push(s);
-  }
-  out.sort((a,b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-  return out;
+function pushSolarRow(tbody, parts, metrics) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${parts.dateISO}</td>
+    <td>${parts.dayName}</td>
+    <td>${parts.time}</td>
+    <td>${metrics.temp}</td>
+    <td>${metrics.humidity}</td>
+    <td>${metrics.clouds}</td>
+  `;
+  tbody.appendChild(tr);
 }
 
-// ===== Data Loaders (live fetch) =====
+// Extract unified metrics for both forecast and historical shapes
+function extractMetrics(item, isHist) {
+  if (isHist) {
+    // onecall hourly
+    return {
+      windSpeed: Number(item.wind_speed ?? 0).toFixed(2),
+      pressure : Number(item.pressure ?? 0).toFixed(0),
+      humidity : Number(item.humidity ?? 0).toFixed(0),
+      temp     : Number(item.temp ?? 0).toFixed(2),
+      clouds   : Number(item.clouds ?? 0).toFixed(0),
+      dt       : item.dt
+    };
+  }
+  // 5-day/3-hour forecast
+  return {
+    windSpeed: Number(item?.wind?.speed ?? 0).toFixed(2),
+    pressure : Number(item?.main?.pressure ?? 0).toFixed(0),
+    humidity : Number(item?.main?.humidity ?? 0).toFixed(0),
+    temp     : Number(item?.main?.temp ?? 0).toFixed(2),
+    clouds   : Number(item?.clouds?.all ?? 0).toFixed(0),
+    dt       : item.dt
+  };
+}
+
+// ===== Main loader for a city =====
 async function loadCity(city) {
-  await Promise.all([loadWindData(city), loadSolarData(city)]);
-}
-
-async function loadWindData(city) {
-  const url = `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&units=metric&appid=${windKey}`;
   const windMeta = document.getElementById('windMeta');
-  const tbody = document.querySelector('#windTable tbody');
-  const sumBody = document.querySelector('#windSummaryTable tbody');
-
-  tbody.innerHTML = '';
-  sumBody.innerHTML = '';
-  windMeta.textContent = 'Loading…';
-
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    if (!data?.list?.length) { windMeta.textContent = 'No wind data available.'; return; }
-
-    const labels = [];
-    const windSpeeds = [];
-    const pressures = [];
-    const humidities = [];
-    const rowsForSummary = [];
-
-    const limit = Math.min(15, data.list.length);
-    for (let i = 0; i < limit; i++) {
-      const entry = data.list[i];
-      const dt = new Date(entry.dt * 1000);
-      const { date, day, time } = splitDateParts(dt);
-
-      const wind = Number(entry?.wind?.speed ?? 0);
-      const pressure = Number(entry?.main?.pressure ?? 0);
-      const humidity = Number(entry?.main?.humidity ?? 0);
-
-      labels.push(time);
-      windSpeeds.push(wind);
-      pressures.push(pressure);
-      humidities.push(humidity);
-
-      appendRow(tbody, [date, day, time, round(wind), round(pressure), round(humidity)]);
-
-      rowsForSummary.push({ date, metrics: { wind, pressure, humidity } });
-    }
-
-    await drawBarChart('windSpeedChart', labels, windSpeeds, 'Wind Speed (m/s)');
-    await drawBarChart('windPressureChart', labels, pressures, 'Pressure (hPa)');
-    await drawBarChart('windHumidityChart', labels, humidities, 'Humidity (%)');
-
-    const summaries = summarizeByDate(rowsForSummary, ['wind','pressure','humidity']);
-    for (const s of summaries) {
-      appendRow(sumBody, [
-        s.date,
-        s.avg_wind, s.min_wind, s.max_wind,
-        s.avg_pressure, s.min_pressure, s.max_pressure,
-        s.avg_humidity, s.min_humidity, s.max_humidity
-      ]);
-    }
-
-    windMeta.textContent = `${city} • ${limit} intervals`;
-  } catch (err) {
-    console.error('Error loading wind data:', err);
-    windMeta.textContent = 'Failed to load wind data.';
-  }
-}
-
-async function loadSolarData(city) {
-  const url = `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&units=metric&appid=${solarKey}`;
   const solarMeta = document.getElementById('solarMeta');
-  const tbody = document.querySelector('#solarTable tbody');
-  const sumBody = document.querySelector('#solarSummaryTable tbody');
+  const windWarn = document.getElementById('windWarn');
+  const solarWarn = document.getElementById('solarWarn');
+  const windBody = document.querySelector('#windTable tbody');
+  const solarBody = document.querySelector('#solarTable tbody');
 
-  tbody.innerHTML = '';
-  sumBody.innerHTML = '';
+  // Reset UI
+  clearTable(windBody);
+  clearTable(solarBody);
+  windWarn.style.display = 'none';
+  windWarn.textContent = '';
+  solarWarn.style.display = 'none';
+  solarWarn.textContent = '';
+  windMeta.textContent = 'Loading…';
   solarMeta.textContent = 'Loading…';
 
   try {
-    const res = await fetch(url);
-    const data = await res.json();
-    if (!data?.list?.length) { solarMeta.textContent = 'No solar data available.'; return; }
+    // Fetch forecast once and derive all series from it
+    const forecastJson = await fetchForecastByCity(city);
+    const { combined, tzOffset, yesterdayWarn } = await selectTenEntries(city, forecastJson);
 
+    if (!combined.length) {
+      windMeta.textContent = 'No data available.';
+      solarMeta.textContent = 'No data available.';
+      return;
+    }
+
+    // Labels & series
     const labels = [];
-    const temps = [];
-    const humidities = [];
-    const clouds = [];
-    const rowsForSummary = [];
+    const windSpeed = [];
+    const pressure = [];
+    const windHumidity = [];
+    const solarTemp = [];
+    const solarHumidity = [];
+    const cloudCover = [];
 
-    const limit = Math.min(15, data.list.length);
-    for (let i = 0; i < limit; i++) {
-      const entry = data.list[i];
-      const dt = new Date(entry.dt * 1000);
-      const { date, day, time } = splitDateParts(dt);
+    // Fill tables and series
+    for (const item of combined.slice(0,10)) {
+      const isHist = !!item._hist;
+      const metric = extractMetrics(item, isHist);
+      const parts = toCityDatePartsFromUnix(metric.dt, tzOffset);
 
-      const temp = Number(entry?.main?.temp ?? 0);
-      const humidity = Number(entry?.main?.humidity ?? 0);
-      const cloud = Number(entry?.clouds?.all ?? 0);
+      // Tables
+      pushWindRow(windBody, parts, metric);
+      pushSolarRow(solarBody, parts, metric);
 
-      labels.push(time);
-      temps.push(temp);
-      humidities.push(humidity);
-      clouds.push(cloud);
+      // Chart labels: compact "YYYY-MM-DD HH:mm"
+      labels.push(`${parts.dateISO} ${parts.time}`);
 
-      appendRow(tbody, [date, day, time, round(temp), round(humidity), round(cloud)]);
-
-      rowsForSummary.push({ date, metrics: { temp, humidity, cloud } });
+      // Series
+      windSpeed.push(Number(metric.windSpeed));
+      pressure.push(Number(metric.pressure));
+      windHumidity.push(Number(metric.humidity));
+      solarTemp.push(Number(metric.temp));
+      solarHumidity.push(Number(metric.humidity));
+      cloudCover.push(Number(metric.clouds));
     }
 
-    await drawBarChart('solarTempChart', labels, temps, 'Temperature (°C)');
-    await drawBarChart('solarHumidityChart', labels, humidities, 'Humidity (%)');
-    await drawBarChart('solarCloudChart', labels, clouds, 'Cloud Cover (%)');
+    // Draw charts
+    await drawBarChart('windSpeedChart', labels, windSpeed, 'Wind Speed (m/s)');
+    await drawBarChart('windPressureChart', labels, pressure, 'Pressure (hPa)');
+    await drawBarChart('windHumidityChart', labels, windHumidity, 'Humidity (%)');
 
-    const summaries = summarizeByDate(rowsForSummary, ['temp','humidity','cloud']);
-    for (const s of summaries) {
-      appendRow(sumBody, [
-        s.date,
-        s.avg_temp, s.min_temp, s.max_temp,
-        s.avg_humidity, s.min_humidity, s.max_humidity,
-        s.avg_cloud, s.min_cloud, s.max_cloud
-      ]);
+    await drawBarChart('solarTempChart', labels, solarTemp, 'Temperature (°C)');
+    await drawBarChart('solarHumidityChart', labels, solarHumidity, 'Humidity (%)');
+    await drawBarChart('solarCloudChart', labels, cloudCover, 'Cloud Cover (%)');
+
+    // Meta + warnings
+    windMeta.textContent = `${city} • ${labels.length} intervals`;
+    solarMeta.textContent = `${city} • ${labels.length} intervals`;
+
+    if (yesterdayWarn) {
+      windWarn.style.display = 'block';
+      windWarn.textContent = yesterdayWarn;
+      solarWarn.style.display = 'block';
+      solarWarn.textContent = yesterdayWarn;
     }
-
-    solarMeta.textContent = `${city} • ${limit} intervals`;
   } catch (err) {
-    console.error('Error loading solar data:', err);
-    solarMeta.textContent = 'Failed to load solar data.';
+    console.error('Load error:', err);
+    windMeta.textContent = 'Failed to load data.';
+    solarMeta.textContent = 'Failed to load data.';
   }
 }
 
