@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta
     name="description"
-    content="Real-time, fetched weather-derived sensor data for wind and solar across APAC capitals to support predictive maintenance decisions."
+    content="Real-time, fetched weather-derived sensor data for wind and solar across select APAC capitals to support predictive maintenance decisions."
   />
   <style>
     :root{
@@ -42,7 +42,7 @@
     header h1 { font-size: 1.35rem; margin: 0; }
     header p { font-size: 0.9rem; margin: 4px 0 0 0; opacity: 0.95; }
 
-    /* Intro block: visible title & description within the page body */
+    /* Intro */
     .intro{
       background:#fff;
       border-bottom:1px solid var(--soft);
@@ -119,10 +119,9 @@
       display:flex;
       align-items:stretch;
     }
-    /* IMPORTANT: explicit height to prevent blank charts */
     .chart-tile canvas {
       width: 100% !important;
-      height: 280px !important;
+      height: 280px !important; /* prevents zero-height rendering */
       display:block;
     }
 
@@ -166,12 +165,21 @@
       text-align:center;
       margin: 6px auto 18px;
     }
+    .warn {
+      color:#b45309;
+      background:#fffbeb;
+      border:1px solid #f59e0b;
+      padding:6px 10px;
+      margin:8px auto;
+      width:fit-content;
+      border-radius:6px;
+    }
   </style>
 </head>
 <body>
   <header>
     <div class="head">
-      docs/assets/logo_kalbariSun1.jpeg
+      <img src="docs/assets/logo_kalbeg
       <div>
         <h1>AI-Driven Predictive Maintenance for Renewable Energy Assets</h1>
         <p>Using Web-Sourced Sensor Data</p>
@@ -179,24 +187,16 @@
     </div>
   </header>
 
-  <!-- Visible title & description in-page -->
   <section class="intro">
     <h2 id="pageTitle">AI-Driven Predictive Maintenance for Renewable Energy Assets</h2>
-    <p id="pageDesc">Real-time monitoring using fetched weather-derived signals for wind and solar across APAC capitals.</p>
+    <p id="pageDesc">Real-time monitoring using fetched weather-derived signals for wind and solar across Manila, Taipei, and Hanoi.</p>
   </section>
 
-  <!-- APAC Tabs -->
+  <!-- Tabs: 3 capitals only -->
   <nav class="tabs" id="tabs">
     <button class="tab active" data-city="Manila">Manila</button>
-    <button class="tab" data-city="Tokyo">Tokyo</button>
-    <button class="tab" data-city="Jakarta">Jakarta</button>
-    <button class="tab" data-city="Bangkok">Bangkok</button>
+    <button class="tab" data-city="Taipei">Taipei</button>
     <button class="tab" data-city="Hanoi">Hanoi</button>
-    <button class="tab" data-city="Kuala Lumpur">Kuala Lumpur</button>
-    <button class="tab" data-city="Singapore">Singapore</button>
-    <button class="tab" data-city="Seoul">Seoul</button>
-    <button class="tab" data-city="Beijing">Beijing</button>
-    <button class="tab" data-city="New Delhi">New Delhi</button>
   </nav>
 
   <!-- WIND -->
@@ -208,8 +208,10 @@
       <div class="chart-tile"><canvas id="windHumidityChart"></canvas></div>
     </div>
 
-    <h2 class="section-title">🌬️ Wind Energy Data</h2>
+    <h2 class="section-title">🌬️ Wind Energy Data (Raw)</h2>
     <div class="meta" id="windMeta"></div>
+    <div class="note">Showing up to 10 rows: 3 from yesterday, 4 today, 3 tomorrow (subject to API availability).</div>
+    <div id="windWarn" class="warn" style="display:none;"></div>
     <table id="windTable">
       <thead>
         <tr>
@@ -219,19 +221,6 @@
           <th>Wind Speed (m/s)</th>
           <th>Pressure (hPa)</th>
           <th>Humidity (%)</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
-    <h2 class="section-title">📊 Wind Summary (Per Date)</h2>
-    <table id="windSummaryTable">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Avg Wind</th><th>Min Wind</th><th>Max Wind</th>
-          <th>Avg Pressure</th><th>Min Pressure</th><th>Max Pressure</th>
-          <th>Avg Humidity</th><th>Min Humidity</th><th>Max Humidity</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -247,8 +236,10 @@
       <div class="chart-tile"><canvas id="solarCloudChart"></canvas></div>
     </div>
 
-    <h2 class="section-title">🔆 Solar Energy Data</h2>
+    <h2 class="section-title">🔆 Solar Energy Data (Raw)</h2>
     <div class="meta" id="solarMeta"></div>
+    <div class="note">Same 10 timestamps are used for both wind and solar metrics for consistency.</div>
+    <div id="solarWarn" class="warn" style="display:none;"></div>
     <table id="solarTable">
       <thead>
         <tr>
@@ -262,27 +253,10 @@
       </thead>
       <tbody></tbody>
     </table>
-
-    <h2 class="section-title">📊 Solar Summary (Per Date)</h2>
-    <table id="solarSummaryTable">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Avg Temp</th><th>Min Temp</th><th>Max Temp</th>
-          <th>Avg Humidity</th><th>Min Humidity</th><th>Max Humidity</th>
-          <th>Avg Cloud</th><th>Min Cloud</th><th>Max Cloud</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
-    <div class="note">
-      Bars highlight <b>Max = Orange</b>, <b>Min = Light-Blue</b>, others <b>Light Gray</b>. Switch tabs to load a different city.
-    </div>
   </section>
 
-  <!-- Pin Chart.js v4 explicitly for stability -->
-  https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js</script>
+  <!-- Pin Chart.js v4 for stability -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@art.umd.min.js</script>
   script.js</script>
 </body>
 </html>
