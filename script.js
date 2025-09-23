@@ -1,24 +1,12 @@
 // ===== OpenWeather API Keys =====
+// Uses only live fetched data; no archive or cached/recorded data.
 const windKey  = '0723d71a05e58ae3f7fc91e39a901e6b';   // wind1
 const solarKey = 'e645925cfe8367841ad656678b7c3acc';   // solar1
 
-// ===== Optional GitHub Save Configuration =====
-// SAFETY: Never hardcode real tokens in client code for public repos.
-// Use a secure serverless proxy (see steps below) and set enabled=true only if proxy is configured.
-const GH_CONFIG = {
-  enabled: false, // set to true once your secure write proxy is configured
-  owner: 'your-username',
-  repo:  'your-repo',
-  branch:'main',
-  assetsDir: 'docs/assets', // aligns with your logo path
-  // If you build a proxy endpoint, set it here (e.g., '/api/github-write')
-  proxyEndpoint: '' // leave blank if you will call GitHub API directly via your proxy
-};
-
-// ===== Chart instances =====
+// ===== Chart instance registry =====
 const charts = {}; // { [canvasId]: Chart }
 
-// ===== Tab handling =====
+// ===== Tabs handling =====
 const tabsEl = document.getElementById('tabs');
 let activeCity = document.querySelector('.tab.active')?.dataset.city || 'Manila';
 
@@ -30,27 +18,24 @@ tabsEl.addEventListener('click', (e) => {
   btn.classList.add('active');
 
   activeCity = btn.dataset.city;
-  // Re-load city after layout is stable to avoid 0-size canvas rendering
+  // Defer rendering until after layout updates to prevent blank canvases
   requestAnimationFrame(() => loadCity(activeCity));
 });
 
-// ===== Utility: format datetime into Date/Day/Time =====
+// ===== Utilities =====
 function splitDateParts(dateObj) {
-  // Localize but keep stable ordering
-  const date = dateObj.toLocaleDateString(undefined, { year:'numeric', month:'2-digit', day:'2-digit' });
+  // Keep 'date' stable for summaries: ISO-like YYYY-MM-DD for reliable sorting
+  const date = dateObj.toLocaleDateString('en-CA'); // e.g., 2025-09-23
   const day  = dateObj.toLocaleDateString(undefined, { weekday: 'long' });
-  const time = dateObj.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  const time = dateObj.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
   return { date, day, time };
 }
-
-// ===== Utility: number rounding =====
 const round = (x, d=2) => (typeof x === 'number' ? +x.toFixed(d) : x);
 
-// ===== Build consistent bar colors: only 1 max (orange), 1 min (lightblue), others light gray =====
 function barColorsForExtremes(data) {
+  // Only max = orange, min = light-blue, all others = light gray
   const LIGHT_GRAY = '#d3d3d3';
   const colors = new Array(data.length).fill(LIGHT_GRAY);
-
   if (!data.length) return colors;
 
   let max = -Infinity, min = Infinity, maxIdx = 0, minIdx = 0;
@@ -58,18 +43,15 @@ function barColorsForExtremes(data) {
     if (v > max) { max = v; maxIdx = i; }
     if (v < min) { min = v; minIdx = i; }
   });
-
   colors[maxIdx] = 'orange';
   colors[minIdx] = 'lightblue';
   return colors;
 }
 
-// ===== Robust chart drawing (prevents "blank" charts on rerender) =====
 function drawBarChart(canvasId, labels, values, title) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
 
-  // Destroy old instance if exists
   if (charts[canvasId]) {
     try { charts[canvasId].destroy(); } catch (e) { /* ignore */ }
   }
@@ -92,7 +74,7 @@ function drawBarChart(canvasId, labels, values, title) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: false, // reduces blank flicker risk
+      animation: false, // reduces chance of 0-size blank rendering on rapid updates
       plugins: {
         legend: { display: false },
         title: { display: true, text: title, color:'#0f172a', font:{weight:'600'} },
@@ -103,30 +85,22 @@ function drawBarChart(canvasId, labels, values, title) {
         }
       },
       scales: {
-        x: {
-          ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 6 },
-          grid: { display:false }
-        },
-        y: {
-          beginAtZero: true,
-          grid: { color: 'rgba(148,163,184,0.25)' }
-        }
+        x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 6 }, grid: { display:false } },
+        y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,0.25)' } }
       }
     }
   });
 }
 
-// ===== Table Row Builders =====
 function appendRow(tbody, cells) {
   const tr = document.createElement('tr');
   tr.innerHTML = cells.map(c => `<td>${c}</td>`).join('');
   tbody.appendChild(tr);
 }
 
-// ===== Summaries Per Date =====
 function summarizeByDate(rows, fields) {
   // rows: [{date, metrics: {field:value}}]
-  const map = new Map(); // date -> array of metrics objects
+  const map = new Map(); // date -> metrics[]
   rows.forEach(r => {
     if (!map.has(r.date)) map.set(r.date, []);
     map.get(r.date).push(r.metrics);
@@ -136,62 +110,24 @@ function summarizeByDate(rows, fields) {
   for (const [date, list] of map.entries()) {
     const summary = { date };
     for (const f of fields) {
-      const vals = list.map(x => x[f]).filter(v => typeof v === 'number');
+      const vals = list.map(x => x[f]).filter(v => typeof v === 'number' && !Number.isNaN(v));
       if (!vals.length) {
         summary[`avg_${f}`] = summary[`min_${f}`] = summary[`max_${f}`] = null;
         continue;
       }
       const sum = vals.reduce((a,b)=>a+b,0);
-      const avg = sum / vals.length;
-      const min = Math.min(...vals);
-      const max = Math.max(...vals);
-      summary[`avg_${f}`] = round(avg,2);
-      summary[`min_${f}`] = round(min,2);
-      summary[`max_${f}`] = round(max,2);
+      summary[`avg_${f}`] = round(sum/vals.length,2);
+      summary[`min_${f}`] = round(Math.min(...vals),2);
+      summary[`max_${f}`] = round(Math.max(...vals),2);
     }
     out.push(summary);
   }
-  // sort by date ascending assuming locale dd/mm/yyyy -> convert to Date
-  out.sort((a,b)=> new Date(a.date) - new Date(b.date));
+  // Sort by ISO-like date lexicographically is safe (YYYY-MM-DD)
+  out.sort((a,b)=> (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
   return out;
 }
 
-// ===== (Optional) Save text to GitHub assets/ via secure proxy or GitHub API =====
-async function saveTxtToGitHub(filename, text) {
-  if (!GH_CONFIG.enabled) return;
-
-  const path = `${GH_CONFIG.assetsDir}/${filename}`;
-  const payload = {
-    owner: GH_CONFIG.owner,
-    repo: GH_CONFIG.repo,
-    branch: GH_CONFIG.branch,
-    path,
-    message: `chore: update ${path}`,
-    // encode as base64 UTF-8
-    content: btoa(unescape(encodeURIComponent(text)))
-  };
-
-  if (!GH_CONFIG.proxyEndpoint) {
-    console.warn('GH save enabled but proxyEndpoint is not set. Skipping write for safety.');
-    return;
-  }
-
-  try {
-    const res = await fetch(GH_CONFIG.proxyEndpoint, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) {
-      const t = await res.text();
-      console.warn('GitHub save failed:', res.status, t);
-    }
-  } catch (err) {
-    console.warn('GitHub save error:', err);
-  }
-}
-
-// ===== Loaders =====
+// ===== Loaders (live fetch only) =====
 async function loadCity(city) {
   await Promise.all([loadWindData(city), loadSolarData(city)]);
 }
@@ -230,7 +166,7 @@ async function loadWindData(city) {
       const pressure = Number(entry?.main?.pressure ?? 0);
       const humidity = Number(entry?.main?.humidity ?? 0);
 
-      labels.push(`${time}`);
+      labels.push(time);
       windSpeeds.push(wind);
       pressures.push(pressure);
       humidities.push(humidity);
@@ -240,20 +176,13 @@ async function loadWindData(city) {
         round(wind), round(pressure), round(humidity)
       ]);
 
-      rowsForSummary.push({
-        date,
-        metrics: {
-          wind, pressure, humidity
-        }
-      });
+      rowsForSummary.push({ date, metrics: { wind, pressure, humidity } });
     }
 
-    // Charts with strict color rules
     drawBarChart('windSpeedChart', labels, windSpeeds, 'Wind Speed (m/s)');
     drawBarChart('windPressureChart', labels, pressures, 'Pressure (hPa)');
     drawBarChart('windHumidityChart', labels, humidities, 'Humidity (%)');
 
-    // Summary per date
     const summaries = summarizeByDate(rowsForSummary, ['wind','pressure','humidity']);
     for (const s of summaries) {
       appendRow(sumBody, [
@@ -265,19 +194,6 @@ async function loadWindData(city) {
     }
 
     windMeta.textContent = `${city} • ${limit} intervals`;
-
-    // (Optional) Save summary txt to GitHub assets
-    const lines = [];
-    lines.push(`WIND SUMMARY for ${city}`);
-    summaries.forEach(s => {
-      lines.push([
-        s.date,
-        `avg_wind=${s.avg_wind}`, `min_wind=${s.min_wind}`, `max_wind=${s.max_wind}`,
-        `avg_pressure=${s.avg_pressure}`, `min_pressure=${s.min_pressure}`, `max_pressure=${s.max_pressure}`,
-        `avg_humidity=${s.avg_humidity}`, `min_humidity=${s.min_humidity}`, `max_humidity=${s.max_humidity}`
-      ].join(' | '));
-    });
-    await saveTxtToGitHub(`wind-summary-${city.replace(/\s+/g,'_')}.txt`, lines.join('\n'));
   } catch (err) {
     console.error('Error loading wind data:', err);
     windMeta.textContent = 'Failed to load wind data.';
@@ -318,7 +234,7 @@ async function loadSolarData(city) {
       const humidity = Number(entry?.main?.humidity ?? 0);
       const cloud = Number(entry?.clouds?.all ?? 0);
 
-      labels.push(`${time}`);
+      labels.push(time);
       temps.push(temp);
       humidities.push(humidity);
       clouds.push(cloud);
@@ -328,20 +244,13 @@ async function loadSolarData(city) {
         round(temp), round(humidity), round(cloud)
       ]);
 
-      rowsForSummary.push({
-        date,
-        metrics: {
-          temp, humidity, cloud
-        }
-      });
+      rowsForSummary.push({ date, metrics: { temp, humidity, cloud } });
     }
 
-    // Charts with strict color rules
     drawBarChart('solarTempChart', labels, temps, 'Temperature (°C)');
     drawBarChart('solarHumidityChart', labels, humidities, 'Humidity (%)');
     drawBarChart('solarCloudChart', labels, clouds, 'Cloud Cover (%)');
 
-    // Summary per date
     const summaries = summarizeByDate(rowsForSummary, ['temp','humidity','cloud']);
     for (const s of summaries) {
       appendRow(sumBody, [
@@ -353,19 +262,6 @@ async function loadSolarData(city) {
     }
 
     solarMeta.textContent = `${city} • ${limit} intervals`;
-
-    // (Optional) Save summary txt to GitHub assets
-    const lines = [];
-    lines.push(`SOLAR SUMMARY for ${city}`);
-    summaries.forEach(s => {
-      lines.push([
-        s.date,
-        `avg_temp=${s.avg_temp}`, `min_temp=${s.min_temp}`, `max_temp=${s.max_temp}`,
-        `avg_humidity=${s.avg_humidity}`, `min_humidity=${s.min_humidity}`, `max_humidity=${s.max_humidity}`,
-        `avg_cloud=${s.avg_cloud}`, `min_cloud=${s.min_cloud}`, `max_cloud=${s.max_cloud}`
-      ].join(' | '));
-    });
-    await saveTxtToGitHub(`solar-summary-${city.replace(/\s+/g,'_')}.txt`, lines.join('\n'));
   } catch (err) {
     console.error('Error loading solar data:', err);
     solarMeta.textContent = 'Failed to load solar data.';
