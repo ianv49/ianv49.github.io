@@ -19,8 +19,9 @@ let solarTempChart, solarHumidityChart, solarCloudChart;
 // Called when the user clicks the "Refresh Data" button.
 // Loads both wind and solar data for the selected city.
 function refreshData() {
-  const city = document.getElementById('citySelect').value;
-  loadWindData(city);
+  const city = document.getElementById('citySelect').value; 
+  updateStatus("🔄 Refreshing data...", `City selected: ${city}`); 
+  loadWindData(city); 
   loadSolarData(city);
 }
 
@@ -30,9 +31,11 @@ function refreshData() {
 // Fetches forecast data from OpenWeather API for wind parameters.
 // Populates the wind table and draws charts for wind speed, pressure, and humidity.
 function loadWindData(city) {
+  updateStatus("🌬️ Loading wind data...", "Fetching forecast from OpenWeather API");
   fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${windKey}`)
     .then(res => res.json())
     .then(data => {
+      updateStatus("✅ Wind data received", "Updating table and charts...");
       const tableBody = document.querySelector('#windTable tbody');
       tableBody.innerHTML = '';
 
@@ -67,7 +70,10 @@ function loadWindData(city) {
       drawBarChart('windPressureChart', labels, pressures, 'Pressure (hPa)', '#00cc66');
       drawBarChart('windHumidityChart', labels, humidities, 'Humidity (%)', '#ff9933');
     })
-    .catch(err => console.error('Error loading wind data:', err));
+    .catch(err => {
+      console.error('Error loading wind data:', err); 
+      pauseOnError("Wind data fetch failed."); 
+    });
 }
 
 // ===============================
@@ -76,9 +82,11 @@ function loadWindData(city) {
 // Fetches forecast data from OpenWeather API for solar parameters.
 // Populates the solar table and draws charts for temperature, humidity, and cloud cover.
 function loadSolarData(city) {
+  updateStatus("🔆 Loading solar data...", "Fetching forecast from OpenWeather API");
   fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${solarKey}`)
     .then(res => res.json())
     .then(data => {
+      updateStatus("✅ Solar data received", "Updating table and charts...");
       const tableBody = document.querySelector('#solarTable tbody');
       tableBody.innerHTML = '';
 
@@ -109,11 +117,16 @@ function loadSolarData(city) {
       }
 
       // Draw charts for each parameter
+      updateStatus("📊 Drawing solar charts...", "Temperature, Humidity, Cloud Cover");
       drawBarChart('solarTempChart', labels, temps, 'Temperature (°C)', '#ff6666');
       drawBarChart('solarHumidityChart', labels, humidities, 'Humidity (%)', '#3399ff');
       drawBarChart('solarCloudChart', labels, clouds, 'Cloud Cover (%)', '#cccc00');
+      updateStatus("✅ Solar charts ready", "Table updated successfully");
     })
-    .catch(err => console.error('Error loading solar data:', err));
+    .catch(err => {
+      console.error('Error loading solar data:', err); 
+      pauseOnError("Solar data fetch failed."); 
+    });
 }
 
 // ===============================
@@ -173,6 +186,33 @@ function colorScale(value, array) {
 }
 
 // ===============================
+// STATUS RIBBON FUNCTIONS
+// ===============================
+
+// Update the two lines of status ribbon
+function updateStatus(line1, line2) {
+  document.getElementById('statusLine1').textContent = line1;
+  document.getElementById('statusLine2').textContent = line2;
+}
+
+// Pause execution when error occurs
+function pauseOnError(errorMsg) {
+  updateStatus("⚠️ Error occurred", errorMsg);
+  // Disable Continue button until user clicks
+  //document.getElementById('continueBtn').disabled = false;
+  document.getElementById('continueBtn').style.display = 'inline-block';  // <-- show button
+}
+
+// Continue execution after pause
+function continueExecution() {
+  updateStatus("▶ Continuing...", "Resuming functions...");
+  // You can re-trigger refresh or resume logic here
+  refreshData();
+  //document.getElementById('continueBtn').disabled = true;
+  document.getElementById('continueBtn').style.display = 'none';   // <-- hide button again
+}
+
+// ===============================
 // MENU TAB SWITCHING
 // ===============================
 // Handles switching between tabs when menu/submenu items are clicked.
@@ -214,40 +254,5 @@ function toggleSubmenu() {
 // INITIAL LOAD
 // ===============================
 // Automatically load data when the page first opens.
+updateStatus("🚀 Initializing...", "Loading default city data...");
 refreshData();
-
-// ===============================
-// STATUS RIBBON FUNCTIONS
-// ===============================
-
-// Update the two lines of status ribbon
-function updateStatus(line1, line2) {
-  document.getElementById('statusLine1').textContent = line1;
-  document.getElementById('statusLine2').textContent = line2;
-}
-
-// Pause execution when error occurs
-function pauseOnError(errorMsg) {
-  updateStatus("⚠️ Error occurred", errorMsg);
-  // Disable Continue button until user clicks
-  document.getElementById('continueBtn').disabled = false;
-}
-
-// Continue execution after pause
-function continueExecution() {
-  updateStatus("▶ Continuing...", "Resuming functions...");
-  // You can re-trigger refresh or resume logic here
-  refreshData();
-  document.getElementById('continueBtn').disabled = true;
-}
-
-// Example usage inside existing functions
-// Add updateStatus calls in your loadWindData and loadSolarData
-// For example, at the start of loadWindData:
-updateStatus("Loading wind data...", "Fetching forecast from OpenWeather API");
-
-// And inside catch blocks:
-.catch(err => {
-  console.error('Error loading wind data:', err);
-  pauseOnError("Wind data fetch failed.");
-});
