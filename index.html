@@ -43,10 +43,13 @@
       background: rgba(255,255,255,0.1);
       display: none;
       flex-direction: column;
+      align-items: flex-start;   /* <-- NEW: left align items */
+      padding-left: 10px;        /* <-- NEW: add left padding */
     }
     .submenu-item {
+      width: 100%;               /* <-- NEW: full width for left alignment */
       padding: 10px;
-      text-align: center;
+      text-align: left;          /* <-- NEW: left align text */
       cursor: pointer;
       transition: background 0.3s;
     }
