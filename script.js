@@ -215,3 +215,39 @@ function toggleSubmenu() {
 // ===============================
 // Automatically load data when the page first opens.
 refreshData();
+
+// ===============================
+// STATUS RIBBON FUNCTIONS
+// ===============================
+
+// Update the two lines of status ribbon
+function updateStatus(line1, line2) {
+  document.getElementById('statusLine1').textContent = line1;
+  document.getElementById('statusLine2').textContent = line2;
+}
+
+// Pause execution when error occurs
+function pauseOnError(errorMsg) {
+  updateStatus("⚠️ Error occurred", errorMsg);
+  // Disable Continue button until user clicks
+  document.getElementById('continueBtn').disabled = false;
+}
+
+// Continue execution after pause
+function continueExecution() {
+  updateStatus("▶ Continuing...", "Resuming functions...");
+  // You can re-trigger refresh or resume logic here
+  refreshData();
+  document.getElementById('continueBtn').disabled = true;
+}
+
+// Example usage inside existing functions
+// Add updateStatus calls in your loadWindData and loadSolarData
+// For example, at the start of loadWindData:
+updateStatus("Loading wind data...", "Fetching forecast from OpenWeather API");
+
+// And inside catch blocks:
+.catch(err => {
+  console.error('Error loading wind data:', err);
+  pauseOnError("Wind data fetch failed.");
+});
