@@ -30,12 +30,16 @@
     .menu-item {
       width: 100%;
       padding: 15px;
-      text-align: center;
+      text-align: left; /* <-- jan12'26: left align text */
       cursor: pointer;
       transition: background 0.3s;
     }
     .menu-item:hover {
       background: rgba(255,255,255,0.2);
+    }
+    .menu-item:active {  /* <-- jan12'26: hilight active main menu */
+      background: rgba(255,255,255,0.4);
+      font-weight: bold;
     }
     /* Submenu styling */
     .submenu {
@@ -43,19 +47,23 @@
       background: rgba(255,255,255,0.1);
       display: none;
       flex-direction: column;
-      align-items: flex-start;   /* <-- NEW: left align items */
-      padding-left: 10px;        /* <-- NEW: add left padding */
+      align-items: flex-start;   /* <-- jan12'26: left align items */
+      padding-left: 10px;        /* <-- jan12'26: add left padding */
     }
     .submenu-item {
-      width: 100%;               /* <-- NEW: full width for left alignment */
-      padding: 10px 15px; /* <-- UPDATED: extra left padding */
-      text-align: left;          /* <-- NEW: left align text */
+      width: 100%;               /* <-- jan12'26: full width for left alignment */
+      padding: 10px 15px; /* <-- jan12'26: extra left padding */
+      text-align: left;          /* <-- jan12'26: left align text */
       cursor: pointer;
       transition: background 0.3s;
-      font-size: 0.95em; /* <-- OPTIONAL: slightly smaller text */
+      font-size: 0.95em; /* <-- jan12'26: slightly smaller text */
     }
     .submenu-item:hover {
       background: rgba(255,255,255,0.3);
+    }
+    .submenu-item:active{  /* <-- jan12'26; highlight active submenu */
+      background: rgba(255,255,255,0.5);
+      font-weight: bold;
     }
     /* Main content area */
     .content {
@@ -102,6 +110,11 @@
       <div class="submenu-item" onclick="showTab('nasa')">🚀 [2] NASA Power API</div>
       <div class="submenu-item" onclick="showTab('solcast')">☀️ [3] Solcast API</div>
       <div class="submenu-item" onclick="showTab('pvoutput')">🔋 [4] PVOutput API</div>
+      <div class="submenu-item" onclick="showTab('download')">⬇️ Download</div> 
+      <div class="submenu-item" onclick="showTab('guides')">📘 Guides</div> 
+      <div class="submenu-item" onclick="showTab('register')">📝 Register</div> 
+      <div class="submenu-item" onclick="showTab('terms')">📑 Terms & Conditions</div> 
+      <div class="submenu-item" onclick="showTab('about')">ℹ️ About</div>
     </div>
   </div>
 
@@ -136,6 +149,31 @@
     <div id="pvoutput" class="tab">
       <header><h1>PVOutput API Data</h1></header>
       <p>PV system output and performance data from PVOutput will be displayed here.</p>
+    </div>
+
+        <div id="download" class="tab">
+      <header><h1>Download</h1></header>
+      <p>Resources and datasets available for download.</p>
+    </div>
+
+    <div id="guides" class="tab">
+      <header><h1>Guides</h1></header>
+      <p>User guides and documentation for APIs and dashboard usage.</p>
+    </div>
+
+    <div id="register" class="tab">
+      <header><h1>Register</h1></header>
+      <p>Registration form or instructions will appear here.</p>
+    </div>
+
+    <div id="terms" class="tab">
+      <header><h1>Terms & Conditions</h1></header>
+      <p>Legal terms and conditions for using this dashboard.</p>
+    </div>
+
+    <div id="about" class="tab">
+      <header><h1>About</h1></header>
+      <p>Information about this project and its purpose.</p>
     </div>
   </div>
 
