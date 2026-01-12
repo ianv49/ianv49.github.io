@@ -15,7 +15,7 @@
     }
     /* Sidebar ribbon */
     .sidebar {
-      width: 200px;
+      width: 220px;
       background: linear-gradient(to bottom, #0077be, #00cc66);
       color: white;
       height: 100vh;
@@ -36,6 +36,22 @@
     }
     .menu-item:hover {
       background: rgba(255,255,255,0.2);
+    }
+    /* Submenu styling */
+    .submenu {
+      width: 100%;
+      background: rgba(255,255,255,0.1);
+      display: none;
+      flex-direction: column;
+    }
+    .submenu-item {
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .submenu-item:hover {
+      background: rgba(255,255,255,0.3);
     }
     /* Main content area */
     .content {
@@ -76,7 +92,13 @@
   <div class="sidebar">
     <h2>Menu</h2>
     <div class="menu-item" onclick="showTab('main')">Main</div>
-    <div class="menu-item" onclick="showTab('data')">Data</div>
+    <div class="menu-item" onclick="toggleSubmenu()">Data ▼</div>
+    <div class="submenu" id="dataSubmenu">
+      <div class="submenu-item" onclick="showTab('openweather')">[1] OpenWeather API</div>
+      <div class="submenu-item" onclick="showTab('nasa')">[2] NASA Power API</div>
+      <div class="submenu-item" onclick="showTab('solcast')">[3] Solcast API</div>
+      <div class="submenu-item" onclick="showTab('pvoutput')">[4] PVOutput API</div>
+    </div>
   </div>
 
   <!-- Content Area -->
@@ -91,14 +113,25 @@
       <p>Welcome to the main dashboard. Use the menu to navigate.</p>
     </div>
 
-    <!-- Data Tab -->
-    <div id="data" class="tab">
-      <header>
-        <h1>Data Dashboard</h1>
-        <p>Explore Wind and Solar Energy Data</p>
-      </header>
-      <!-- Here you can embed your charts and tables -->
-      <p>Charts and tables will appear here.</p>
+    <!-- Sub Tabs under Data -->
+    <div id="openweather" class="tab">
+      <header><h1>OpenWeather API Data</h1></header>
+      <p>Weather-based renewable energy metrics will be displayed here.</p>
+    </div>
+
+    <div id="nasa" class="tab">
+      <header><h1>NASA Power API Data</h1></header>
+      <p>NASA POWER datasets for solar and wind energy will be displayed here.</p>
+    </div>
+
+    <div id="solcast" class="tab">
+      <header><h1>Solcast API Data</h1></header>
+      <p>Solar irradiance and forecast data from Solcast will be displayed here.</p>
+    </div>
+
+    <div id="pvoutput" class="tab">
+      <header><h1>PVOutput API Data</h1></header>
+      <p>PV system output and performance data from PVOutput will be displayed here.</p>
     </div>
   </div>
 
@@ -109,6 +142,12 @@
         tab.classList.remove('active');
       });
       document.getElementById(tabId).classList.add('active');
+    }
+
+    // ✅ Toggle submenu visibility
+    function toggleSubmenu() {
+      const submenu = document.getElementById('dataSubmenu');
+      submenu.style.display = submenu.style.display === 'flex' ? 'none' : 'flex';
     }
   </script>
 </body>
