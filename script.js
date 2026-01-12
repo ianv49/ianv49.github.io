@@ -260,6 +260,41 @@ async function selectTenEntries(city, forecastJson) {
   return { combined, tzOffset, yesterdayISO, todayISO, tomorrowISO, yesterdayWarn };
 }
 
+//jan12'26; code for active highlight [start]
+//  <script>
+    // ✅ Tab switching function with active highlight
+    function showTab(tabId) {
+      // Hide all tabs
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.getElementById(tabId).classList.add('active');
+
+      // Remove active from all menu items
+      document.querySelectorAll('.menu-item, .submenu-item').forEach(item => {
+        item.classList.remove('active');
+      });
+
+      // Highlight the clicked submenu or menu item
+      const clickedItem = [...document.querySelectorAll('.menu-item, .submenu-item')]
+        .find(item => item.getAttribute('onclick')?.includes(tabId));
+      if (clickedItem) {
+        clickedItem.classList.add('active');
+        // ✅ If submenu item is active, also highlight the Data parent menu
+        if (clickedItem.classList.contains('submenu-item')) {
+          document.querySelector('.menu-item[onclick="toggleSubmenu()"]').classList.add('active');
+        }
+      }
+    }
+
+    // ✅ Toggle submenu visibility
+    function toggleSubmenu() {
+      const submenu = document.getElementById('dataSubmenu');
+      submenu.style.display = submenu.style.display === 'flex' ? 'none' : 'flex';
+    }
+// </script>
+//jan12'26; code for active highlight [end]
+
 // ===== Renderers =====
 function clearTable(tbody) { tbody.innerHTML = ''; }
 
