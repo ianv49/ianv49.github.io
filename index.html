@@ -48,10 +48,11 @@
     }
     .submenu-item {
       width: 100%;               /* <-- NEW: full width for left alignment */
-      padding: 10px;
+      padding: 10px 15px; /* <-- UPDATED: extra left padding */
       text-align: left;          /* <-- NEW: left align text */
       cursor: pointer;
       transition: background 0.3s;
+      font-size: 0.95em; /* <-- OPTIONAL: slightly smaller text */
     }
     .submenu-item:hover {
       background: rgba(255,255,255,0.3);
@@ -97,10 +98,10 @@
     <div class="menu-item" onclick="showTab('main')">Main</div>
     <div class="menu-item" onclick="toggleSubmenu()">Data ▼</div>
     <div class="submenu" id="dataSubmenu">
-      <div class="submenu-item" onclick="showTab('openweather')">[1] OpenWeather API</div>
-      <div class="submenu-item" onclick="showTab('nasa')">[2] NASA Power API</div>
-      <div class="submenu-item" onclick="showTab('solcast')">[3] Solcast API</div>
-      <div class="submenu-item" onclick="showTab('pvoutput')">[4] PVOutput API</div>
+      <div class="submenu-item" onclick="showTab('openweather')">🌤️ [1] OpenWeather API</div>
+      <div class="submenu-item" onclick="showTab('nasa')">🚀 [2] NASA Power API</div>
+      <div class="submenu-item" onclick="showTab('solcast')">☀️ [3] Solcast API</div>
+      <div class="submenu-item" onclick="showTab('pvoutput')">🔋 [4] PVOutput API</div>
     </div>
   </div>
 
