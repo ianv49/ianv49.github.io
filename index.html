@@ -1,262 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>AI-Driven Predictive Maintenance for Renewable Energy Assets</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta
-    name="description"
-    content="Real-time, fetched weather-derived sensor data for wind and solar across select APAC capitals to support predictive maintenance decisions."
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    :root{
-      --blue:#0077be;
-      --green:#00cc66;
-      --page:#f0f8ff;
-      --soft:#e5e7eb;
-      --ink:#0f172a;
-      --light-gray:#d3d3d3;
-    }
-    *{box-sizing:border-box}
     body {
-      font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       margin: 0;
       padding: 0;
-      background: var(--page);
+      display: flex;
+      background: #f0f8ff;
       color: #333;
     }
-    header {
-      background: linear-gradient(to right, var(--blue), var(--green));
+    /* Sidebar ribbon */
+    .sidebar {
+      width: 200px;
+      background: linear-gradient(to bottom, #0077be, #00cc66);
       color: white;
-      padding: 18px 12px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 20px;
+    }
+    .sidebar h2 {
+      margin-bottom: 20px;
+    }
+    .menu-item {
+      width: 100%;
+      padding: 15px;
       text-align: center;
+      cursor: pointer;
+      transition: background 0.3s;
     }
-    header .head {
-      display:flex;
-      gap:12px;
-      align-items:center;
-      justify-content:center;
-      flex-wrap:wrap;
+    .menu-item:hover {
+      background: rgba(255,255,255,0.2);
     }
-    header img { height: 56px; border-radius: 6px; }
-    header h1 { font-size: 1.35rem; margin: 0; }
-    header p { font-size: 0.9rem; margin: 4px 0 0 0; opacity: 0.95; }
-
-    /* Intro */
-    .intro{
-      background:#fff;
-      border-bottom:1px solid var(--soft);
-      text-align:center;
-      padding:12px 12px 10px;
-    }
-    .intro h2{
-      margin: 6px 0 4px;
-      font-size:1.15rem;
-      color:var(--ink);
-    }
-    .intro p{
-      margin:0;
-      color:#475569;
-      font-size:0.95rem;
-    }
-
-    /* Tabs */
-    .tabs {
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      justify-content:center;
-      padding: 12px 10px;
-      background:#fff;
-      border-bottom:1px solid var(--soft);
-      position:sticky;
-      top:0;
-      z-index:10;
+    /* Main content area */
+    .content {
+      flex: 1;
+      padding: 20px;
     }
     .tab {
-      appearance:none;
-      border:1px solid var(--soft);
-      background:#fff;
-      color:#333;
-      padding:8px 12px;
-      border-radius:8px;
-      cursor:pointer;
-      font-size:.95rem;
-      transition:all .15s ease;
+      display: none;
     }
-    .tab:hover { border-color:#cbd5e1; box-shadow:0 1px 2px rgba(0,0,0,.05);}
     .tab.active {
-      background:#f1f5f9;
-      border-color:#cbd5e1;
-      color:var(--ink);
-      font-weight:600;
+      display: block;
     }
-
-    h2.section-title {
-      margin: 22px 0 8px;
-      color: var(--blue);
-      text-align:center;
-      font-size:1.15rem;
-    }
-    .section {
-      padding: 6px 10px 18px;
-    }
-
-    .chart-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 16px;
-      margin: 10px auto 0;
-      max-width: 1280px;
-      padding: 0 10px;
-    }
-    .chart-tile {
-      background: #fff;
-      border:1px solid var(--soft);
-      border-radius: 10px;
-      padding: 10px;
-      min-height: 320px;
-      display:flex;
-      align-items:stretch;
-    }
-    .chart-tile canvas {
-      width: 100% !important;
-      height: 280px !important; /* prevents zero-height rendering */
-      display:block;
-    }
-
-    table {
-      border-collapse: collapse;
-      width: 98%;
-      max-width:1280px;
-      margin: 10px auto 18px;
-      background: white;
-      font-size: 0.9rem;
-      border:1px solid var(--soft);
-      border-radius:8px;
-      overflow:hidden;
-    }
-    thead th {
-      background:#f8fafc;
-      color:var(--ink);
-      border-bottom:1px solid var(--soft);
-      padding: 8px;
-      text-align:center;
-      position:sticky;
-      top: 60px; /* below tabs + intro */
-      z-index:1;
-    }
-    tbody td {
-      border-bottom: 1px solid var(--soft);
-      padding: 6px 8px;
+    header {
+      background: linear-gradient(to right, #0077be, #00cc66);
+      color: white;
+      padding: 20px;
       text-align: center;
     }
-    tbody tr:nth-child(even){ background:#fafafa; }
-
-    .meta {
-      font-size:.85rem;
-      color:#475569;
-      text-align:center;
-      margin: 6px auto 16px;
+    header img {
+      height: 60px;
+      vertical-align: middle;
+      margin-right: 10px;
     }
-    .note {
-      font-size:.8rem;
-      color:#6b7280;
-      text-align:center;
-      margin: 6px auto 18px;
+    header h1 {
+      display: inline-block;
+      vertical-align: middle;
+      font-size: 1.5em;
+      margin: 0;
     }
-    .warn {
-      color:#b45309;
-      background:#fffbeb;
-      border:1px solid #f59e0b;
-      padding:6px 10px;
-      margin:8px auto;
-      width:fit-content;
-      border-radius:6px;
+    header p {
+      font-size: 0.9em;
+      margin-top: 5px;
     }
   </style>
 </head>
 <body>
-  <header>
-    <div class="head">
-      <img src="docs/assets/logo_kalbeg
-      <div>
+  <!-- Sidebar Ribbon -->
+  <div class="sidebar">
+    <h2>Menu</h2>
+    <div class="menu-item" onclick="showTab('main')">Main</div>
+    <div class="menu-item" onclick="showTab('data')">Data</div>
+  </div>
+
+  <!-- Content Area -->
+  <div class="content">
+    <!-- Main Tab -->
+    <div id="main" class="tab active">
+      <header>
+        <img src="docs/assets/logo_kalbariSun1.jpeg" alt="Logo">
         <h1>AI-Driven Predictive Maintenance for Renewable Energy Assets</h1>
         <p>Using Web-Sourced Sensor Data</p>
-      </div>
-    </div>
-  </header>
-
-  <section class="intro">
-    <h2 id="pageTitle">AI-Driven Predictive Maintenance for Renewable Energy Assets</h2>
-    <p id="pageDesc">Real-time monitoring using fetched weather-derived signals for wind and solar across Manila, Taipei, and Hanoi.</p>
-  </section>
-
-  <!-- Tabs: 3 capitals only -->
-  <nav class="tabs" id="tabs">
-    <button class="tab active" data-city="Manila">Manila</button>
-    <button class="tab" data-city="Taipei">Taipei</button>
-    <button class="tab" data-city="Hanoi">Hanoi</button>
-  </nav>
-
-  <!-- WIND -->
-  <section class="section">
-    <h2 class="section-title">🌬️ Wind Energy Charts</h2>
-    <div class="chart-row">
-      <div class="chart-tile"><canvas id="windSpeedChart"></canvas></div>
-      <div class="chart-tile"><canvas id="windPressureChart"></canvas></div>
-      <div class="chart-tile"><canvas id="windHumidityChart"></canvas></div>
+      </header>
+      <p>Welcome to the main dashboard. Use the menu to navigate.</p>
     </div>
 
-    <h2 class="section-title">🌬️ Wind Energy Data (Raw)</h2>
-    <div class="meta" id="windMeta"></div>
-    <div class="note">Showing up to 10 rows: 3 from yesterday, 4 today, 3 tomorrow (subject to API availability).</div>
-    <div id="windWarn" class="warn" style="display:none;"></div>
-    <table id="windTable">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Day</th>
-          <th>Time</th>
-          <th>Wind Speed (m/s)</th>
-          <th>Pressure (hPa)</th>
-          <th>Humidity (%)</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
-
-  <!-- SOLAR -->
-  <section class="section">
-    <h2 class="section-title">🔆 Solar Energy Charts</h2>
-    <div class="chart-row">
-      <div class="chart-tile"><canvas id="solarTempChart"></canvas></div>
-      <div class="chart-tile"><canvas id="solarHumidityChart"></canvas></div>
-      <div class="chart-tile"><canvas id="solarCloudChart"></canvas></div>
+    <!-- Data Tab -->
+    <div id="data" class="tab">
+      <header>
+        <h1>Data Dashboard</h1>
+        <p>Explore Wind and Solar Energy Data</p>
+      </header>
+      <!-- Here you can embed your charts and tables -->
+      <p>Charts and tables will appear here.</p>
     </div>
+  </div>
 
-    <h2 class="section-title">🔆 Solar Energy Data (Raw)</h2>
-    <div class="meta" id="solarMeta"></div>
-    <div class="note">Same 10 timestamps are used for both wind and solar metrics for consistency.</div>
-    <div id="solarWarn" class="warn" style="display:none;"></div>
-    <table id="solarTable">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Day</th>
-          <th>Time</th>
-          <th>Temperature (°C)</th>
-          <th>Humidity (%)</th>
-          <th>Cloud Cover (%)</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
-
-  <!-- Pin Chart.js v4 for stability -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@art.umd.min.js</script>
-  script.js</script>
+  <script>
+    // ✅ Tab switching function
+    function showTab(tabId) {
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.getElementById(tabId).classList.add('active');
+    }
+  </script>
 </body>
 </html>
