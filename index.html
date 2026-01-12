@@ -101,21 +101,26 @@
 </head>
 <body>
   <!-- Sidebar Ribbon -->
-  <div class="sidebar">
+   <div class="sidebar">
     <h2>Menu</h2>
+    <!-- Main menu -->
     <div class="menu-item" onclick="showTab('main')">Main</div>
+
+    <!-- Data menu with API sub-tabs -->
     <div class="menu-item" onclick="toggleSubmenu()">Data ▼</div>
     <div class="submenu" id="dataSubmenu">
       <div class="submenu-item" onclick="showTab('openweather')">🌤️ [1] OpenWeather API</div>
       <div class="submenu-item" onclick="showTab('nasa')">🚀 [2] NASA Power API</div>
       <div class="submenu-item" onclick="showTab('solcast')">☀️ [3] Solcast API</div>
       <div class="submenu-item" onclick="showTab('pvoutput')">🔋 [4] PVOutput API</div>
-      <div class="submenu-item" onclick="showTab('download')">⬇️ Download</div> 
-      <div class="submenu-item" onclick="showTab('guides')">📘 Guides</div> 
-      <div class="submenu-item" onclick="showTab('register')">📝 Register</div> 
-      <div class="submenu-item" onclick="showTab('terms')">📑 Terms & Conditions</div> 
-      <div class="submenu-item" onclick="showTab('about')">ℹ️ About</div>
     </div>
+
+    <!-- Non-API items as separate main menu entries -->
+    <div class="menu-item" onclick="showTab('download')">⬇️ Download</div>
+    <div class="menu-item" onclick="showTab('guides')">📘 Guides</div>
+    <div class="menu-item" onclick="showTab('register')">📝 Register</div>
+    <div class="menu-item" onclick="showTab('terms')">📑 Terms & Conditions</div>
+    <div class="menu-item" onclick="showTab('about')">ℹ️ About</div>
   </div>
 
   <!-- Content Area -->
