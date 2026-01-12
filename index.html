@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>AI-Driven Predictive Maintenance for Renewable Energy Assets</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -65,6 +66,40 @@
       background: rgba(255,255,255,0.5);
       font-weight: bold;
     }
+
+    /* Bottom status ribbon */
+    #statusRibbon {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: linear-gradient(to right, #0077be, #00cc66);
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      font-size: 0.9em;
+    }
+    #statusMessages {
+      text-align: left;
+    }
+    #statusMessages p {
+      margin: 2px 0;
+    }
+    #continueBtn {
+      background: #ff9933;
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    #continueBtn:hover {
+      background: #cc6600;
+    }
+
     /* Main content area */
     .content {
       flex: 1;
@@ -99,6 +134,7 @@
     }
   </style>
 </head>
+  
 <body>
   <!-- Sidebar Ribbon -->
    <div class="sidebar">
@@ -180,6 +216,16 @@
       <header><h1>About</h1></header>
       <p>Information about this project and its purpose.</p>
     </div>
+
+    <!-- Bottom Ribbon for Status -->
+      <div id="statusRibbon">
+      <div id="statusMessages">
+      <p id="statusLine1">System ready.</p>
+      <p id="statusLine2">Awaiting actions...</p>
+      </div>
+      <button id="continueBtn" onclick="continueExecution()">Continue</button>
+  </div>
+
   </div>
 
   <script>
