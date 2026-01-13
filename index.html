@@ -176,8 +176,15 @@
     <!-- Non-API tabs -->
     <div id="download" class="tab"><header><h1>Download</h1></header>
       <p>Resources and datasets available for download.</p></div>
+    
     <div id="guides" class="tab"><header><h1>Guides</h1></header>
-      <p>User guides and documentation for APIs and dashboard usage.</p></div>
+      <label> 
+        <input type="checkbox" id="debugToggle" onchange="toggleDebugMode()"> Enable Debug Mode 
+      </label> 
+      <p>When enabled, functions will pause before execution. Use the Continue button to step through.</p>
+      <p>User guides and documentation for APIs and dashboard usage.</p>
+    </div>
+    
     <div id="register" class="tab"><header><h1>Register</h1></header>
       <p>Registration form or instructions will appear here.</p></div>
     <div id="terms" class="tab"><header><h1>Terms & Conditions</h1></header>
