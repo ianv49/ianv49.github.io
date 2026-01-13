@@ -133,15 +133,43 @@
         <p>Using Web-Sourced Sensor Data</p>
       </header>
       <p>Welcome to the main dashboard. Use the menu to navigate.</p>
+      <button onclick="refreshData()">🔄 Refresh Data</button> <!-- fix, change1 jan13 -->
     </div>
 
     <!-- Sub Tabs under Data, API tabs -->
     <div id="openweather" class="tab"><header><h1>OpenWeather API Data</h1></header>
+        <select id="citySelect"> <!-- fix, change2 jan13 -->
+          <option value="Manila">Manila</option> 
+          <option value="Tokyo">Tokyo</option> 
+          <option value="Sydney">Sydney</option> 
+        </select> 
+        <table id="windTable" border="1"> 
+          <thead> 
+            <tr><th>DateTime</th><th>Wind Speed</th><th>Pressure</th><th>Humidity</th></tr> 
+          </thead> 
+          <tbody></tbody> 
+        </table> 
+        <canvas id="windSpeedChart"></canvas> 
+        <canvas id="windPressureChart"></canvas> 
+        <canvas id="windHumidityChart"></canvas>      
       <p>Weather-based renewable energy metrics will be displayed here.</p></div>
+    
     <div id="nasa" class="tab"><header><h1>NASA Power API Data</h1></header>
       <p>NASA POWER datasets for solar and wind energy will be displayed here.</p></div>
+    
     <div id="solcast" class="tab"><header><h1>Solcast API Data</h1></header>
+      <!-- fix, change3 jan13 -->
+        <table id="solarTable" border="1"> 
+          <thead> 
+            <tr><th>DateTime</th><th>Temperature</th><th>Humidity</th><th>Cloud Cover</th></tr> 
+          </thead> 
+          <tbody></tbody> 
+        </table> 
+        <canvas id="solarTempChart"></canvas> 
+        <canvas id="solarHumidityChart"></canvas> 
+        <canvas id="solarCloudChart"></canvas>
       <p>Solar irradiance and forecast data from Solcast will be displayed here.</p></div>
+    
     <div id="pvoutput" class="tab"><header><h1>PVOutput API Data</h1></header>
       <p>PV system output and performance data from PVOutput will be displayed here.</p></div>
 
