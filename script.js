@@ -20,11 +20,12 @@ let debugMode = false;
 // ===============================
 // Called when the user clicks the "Refresh Data" button.
 // Loads both wind and solar data for the selected city.
-function refreshData() {
-  if (debugPause(() => refreshData())) return; // <-- jan13'26; add with debug
-  const city = document.getElementById('citySelect').value; 
-  updateStatus("🔄 Refreshing data...", `City selected: ${city}`); 
-  loadWindData(city); 
+async function refreshData() {
+  await new Promise(r => setTimeout(r, 500));   // <-- NEW wait
+  if (debugPause(() => refreshData())) return;
+  const city = document.getElementById('citySelect').value;
+  updateStatus("🔄 Refreshing data...", `City selected: ${city}`);
+  loadWindData(city);
   loadSolarData(city);
 }
 
@@ -33,9 +34,10 @@ function refreshData() {
 // ===============================
 // Fetches forecast data from OpenWeather API for wind parameters.
 // Populates the wind table and draws charts for wind speed, pressure, and humidity.
-function loadWindData(city) {
-  if (debugPause(() => loadWindData(city))) return; // <-- jan13'26; add with debug
-  updateStatus("🌬️ Loading wind data...", `City: ${city}`, "Fetching forecast from OpenWeather API");
+async function loadWindData(city) {
+  await new Promise(r => setTimeout(r, 500));   // <-- 0.5s wait
+  if (debugPause(() => loadWindData(city))) return;
+  updateStatus("🌬️ Loading wind data...", `City: ${city}`);
   fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${windKey}`)
     .then(res => res.json())
     .then(data => {
@@ -92,7 +94,8 @@ function loadWindData(city) {
 // ===============================
 // Fetches forecast data from OpenWeather API for solar parameters.
 // Populates the solar table and draws charts for temperature, humidity, and cloud cover.
-function loadSolarData(city) {
+async function loadSolarData(city) {
+  await new Promise(r => setTimeout(r, 500));   // <-- NEW wait
   if (debugPause(() => loadSolarData(city))) return; // <-- jan13'26; add with debug
   updateStatus("🔆 Loading solar data...", `City: ${city}`);
   fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${solarKey}`)
@@ -153,8 +156,9 @@ function loadSolarData(city) {
 // ===============================
 // Creates a bar chart for a given dataset.
 // Highlights max values in orange and min values in light blue.
-function drawBarChart(canvasId, labels, data, label, baseColor) { // <-- jan13'26; add with debug
-  if (debugPause(() => drawBarChart(canvasId, labels, data, label, baseColor))) return; // <-- NEW
+async function drawBarChart(canvasId, labels, data, label, baseColor) { // <-- jan13'26; add with debug
+  await new Promise(r => setTimeout(r, 500));   // <-- NEW wait
+  if (debugPause(() => drawBarChart(canvasId, labels, data, label, baseColor))) return;
   const ctx = document.getElementById(canvasId).getContext('2d');
   if (window[canvasId]) window[canvasId].destroy();
 
@@ -221,8 +225,17 @@ function toggleDebugMode() {
 
 // Update the two lines of status ribbon
 function updateStatus(line1, line2) {
-  document.getElementById('statusLine1').textContent = line1;
-  document.getElementById('statusLine2').textContent = line2;
+  const log = document.getElementById('statusMessages');
+  const entry = document.createElement('p');
+  entry.textContent = `${line1} - ${line2}`;
+  log.appendChild(entry);
+
+  // Keep only last 20 rows
+  while (log.children.length > 20) {
+    log.removeChild(log.firstChild);
+  }
+
+  document.getElementById('statusRibbon').className = 'normal';  // default state
 }
 
 // Pause execution when error occurs

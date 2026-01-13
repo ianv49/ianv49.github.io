@@ -78,15 +78,20 @@
     /* Bottom status ribbon */ /* [Lines 96–115] Bottom status ribbon */
     #statusRibbon {
       position: fixed;
-      bottom: 0; left: 0;
-      width: 100%;
-      background: linear-gradient(to right, #0077be, #00cc66);
+      bottom: 0; right: 0;  /* <-- move to right side */
+      width: 30ch;          /* <-- fixed width ~30 characters */
+      height: 100%;                  /* full height column */
+      overflow-y: auto;              /* scroll if >20 rows */
+      background: linear-gradient(to top, #0077be, #00cc66);
       color: white;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 20px;
+      flex-direction: column;        /* stack messages vertically */
+      justify-content: flex-start;
+      align-items: flex-start;
+      padding: 10px;
       font-size: 0.9em;
+    }
+
     }
     #statusRibbon.normal { background: linear-gradient(to right, #0077be, #00cc66); }
     #statusRibbon.success { background: #00cc66; }
@@ -195,9 +200,8 @@
     <!-- [Lines 201–215] Bottom status ribbon -->
       <div id="statusRibbon">
         <div id="statusMessages">
-          <p id="statusLine1">System ready.</p>
-          <p id="statusLine2">Awaiting actions...</p>
-        </div>
+          <!-- Log stream will append <p> entries here -->
+        </div>    
         <button id="continueBtn" onclick="continueExecution()">Continue</button>
       </div>
   </div>
