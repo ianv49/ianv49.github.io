@@ -12,6 +12,8 @@ const solarKey = 'e645925cfe8367841ad656678b7c3acc';  // solar1
 // We store chart instances globally so they can be destroyed and redrawn when refreshed.
 let windSpeedChart, windPressureChart, windHumidityChart;
 let solarTempChart, solarHumidityChart, solarCloudChart;
+// Debug mode flag 
+let debugMode = false;
 
 // ===============================
 // REFRESH FUNCTION
@@ -19,6 +21,7 @@ let solarTempChart, solarHumidityChart, solarCloudChart;
 // Called when the user clicks the "Refresh Data" button.
 // Loads both wind and solar data for the selected city.
 function refreshData() {
+  if (debugPause(() => refreshData())) return; // <-- jan13'26; add with debug
   const city = document.getElementById('citySelect').value; 
   updateStatus("🔄 Refreshing data...", `City selected: ${city}`); 
   loadWindData(city); 
@@ -31,6 +34,7 @@ function refreshData() {
 // Fetches forecast data from OpenWeather API for wind parameters.
 // Populates the wind table and draws charts for wind speed, pressure, and humidity.
 function loadWindData(city) {
+  if (debugPause(() => loadWindData(city))) return; // <-- jan13'26; add with debug
   updateStatus("🌬️ Loading wind data...", "Fetching forecast from OpenWeather API");
   fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${windKey}`)
     .then(res => res.json())
@@ -82,6 +86,7 @@ function loadWindData(city) {
 // Fetches forecast data from OpenWeather API for solar parameters.
 // Populates the solar table and draws charts for temperature, humidity, and cloud cover.
 function loadSolarData(city) {
+  if (debugPause(() => loadSolarData(city))) return; // <-- jan13'26; add with debug
   updateStatus("🔆 Loading solar data...", "Fetching forecast from OpenWeather API");
   fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${solarKey}`)
     .then(res => res.json())
@@ -134,7 +139,8 @@ function loadSolarData(city) {
 // ===============================
 // Creates a bar chart for a given dataset.
 // Highlights max values in orange and min values in light blue.
-function drawBarChart(canvasId, labels, data, label, baseColor) {
+function drawBarChart(canvasId, labels, data, label, baseColor) { // <-- jan13'26; add with debug
+  if (debugPause(() => drawBarChart(canvasId, labels, data, label, baseColor))) return; // <-- NEW
   const ctx = document.getElementById(canvasId).getContext('2d');
   if (window[canvasId]) window[canvasId].destroy();
 
@@ -185,6 +191,16 @@ function colorScale(value, array) {
   return '#ffffff';
 }
 
+// Toggle debug mode from Guides tab 
+function toggleDebugMode() {
+  debugMode = document.getElementById('debugToggle').checked; 
+  if (debugMode) { 
+    updateStatus("🐞 Debug Mode ON", "Functions will pause before execution"); 
+  } else { 
+    updateStatus("✅ Debug Mode OFF", "Functions run normally"); 
+  } 
+}
+
 // ===============================
 // STATUS RIBBON FUNCTIONS
 // ===============================
@@ -203,13 +219,29 @@ function pauseOnError(errorMsg) {
   document.getElementById('continueBtn').style.display = 'inline-block';  // <-- show button
 }
 
+// Pause routine if debug mode is active 
+function debugPause(nextStep) { 
+  if (debugMode) { 
+  updateStatus("⏸️ Paused in Debug Mode", "Click Continue to proceed"); 
+  document.getElementById('continueBtn').style.display = 'inline-block'; 
+  // Store next step to resume 
+  window.debugNextStep = nextStep; 
+  return true; // paused 
+  } 
+  return false; // not paused 
+}
+
 // Continue execution after pause
 function continueExecution() {
   updateStatus("▶ Continuing...", "Resuming functions...");
-  // You can re-trigger refresh or resume logic here
-  refreshData();
-  //document.getElementById('continueBtn').disabled = true;
-  document.getElementById('continueBtn').style.display = 'none';   // <-- hide button again
+  if (window.debugNextStep) {
+    const step = window.debugNextStep;
+    window.debugNextStep = null;
+    step(); // resume paused function
+  } else {
+    refreshData(); // normal resume
+  }
+  document.getElementById('continueBtn').style.display = 'none';
 }
 
 // ===============================
