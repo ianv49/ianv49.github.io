@@ -35,10 +35,13 @@ function refreshData() {
 // Populates the wind table and draws charts for wind speed, pressure, and humidity.
 function loadWindData(city) {
   if (debugPause(() => loadWindData(city))) return; // <-- jan13'26; add with debug
-  updateStatus("🌬️ Loading wind data...", "Fetching forecast from OpenWeather API");
+  updateStatus("🌬️ Loading wind data...", `City: ${city}`, "Fetching forecast from OpenWeather API");
   fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${windKey}`)
     .then(res => res.json())
     .then(data => {
+      if (debugMode) {
+        updateStatus("🐞 Debug: Wind API response received", `Entries: ${data.list.length}`);
+      }
       updateStatus("✅ Wind data received", "Updating table and charts...");
       const tableBody = document.querySelector('#windTable tbody');
       tableBody.innerHTML = '';
@@ -75,8 +78,12 @@ function loadWindData(city) {
       drawBarChart('windHumidityChart', labels, humidities, 'Humidity (%)', '#ff9933');
     })
     .catch(err => {
-      console.error('Error loading wind data:', err); 
-      pauseOnError("Wind data fetch failed."); 
+      console.error('Error loading wind data:', err);
+      if (debugMode) {
+        pauseOnError(`Wind API error: ${err.message || err}`);
+      } else {
+        pauseOnError("Wind data fetch failed.");
+      }      
     });
 }
 
@@ -87,10 +94,13 @@ function loadWindData(city) {
 // Populates the solar table and draws charts for temperature, humidity, and cloud cover.
 function loadSolarData(city) {
   if (debugPause(() => loadSolarData(city))) return; // <-- jan13'26; add with debug
-  updateStatus("🔆 Loading solar data...", "Fetching forecast from OpenWeather API");
+  updateStatus("🔆 Loading solar data...", `City: ${city}`);
   fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${solarKey}`)
     .then(res => res.json())
     .then(data => {
+      if (debugMode) {
+        updateStatus("🐞 Debug: Solar API response received", `Entries: ${data.list.length}`);
+      }
       updateStatus("✅ Solar data received", "Updating table and charts...");
       const tableBody = document.querySelector('#solarTable tbody');
       tableBody.innerHTML = '';
@@ -129,8 +139,12 @@ function loadSolarData(city) {
       updateStatus("✅ Solar charts ready", "Table updated successfully");
     })
     .catch(err => {
-      console.error('Error loading solar data:', err); 
-      pauseOnError("Solar data fetch failed."); 
+      console.error('Error loading solar data:', err);
+      if (debugMode) {
+        pauseOnError(`Solar API error: ${err.message || err}`);
+      } else {
+        pauseOnError("Solar data fetch failed.");
+      }
     });
 }
 
