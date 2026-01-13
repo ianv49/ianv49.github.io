@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- [Lines 1–7] Document metadata -->
   <meta charset="UTF-8">
   <title>AI-Driven Predictive Maintenance for Renewable Energy Assets</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
+  <!-- [Lines 8–70] CSS Styles -->
   <style>
+    /* [Lines 10–20] Base body styling */
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
@@ -15,6 +18,7 @@
       color: #333;
     }
     /* Sidebar ribbon */
+    /* [Lines 21–35] Sidebar ribbon styling */
     .sidebar {
       width: 220px;
       background: linear-gradient(to bottom, #0077be, #00cc66);
@@ -28,21 +32,19 @@
     .sidebar h2 {
       margin-bottom: 20px;
     }
+    
+    /* [Lines 36–45] Main menu items */
     .menu-item {
       width: 100%;
       padding: 15px;
       text-align: left; /* <-- jan12'26: left align text */
       cursor: pointer;
-      transition: background 0.3s;
+      transition: background 0.3s; 
     }
-    .menu-item:hover {
-      background: rgba(255,255,255,0.2);
-    }
-    .menu-item:active {  /* <-- jan12'26: hilight active main menu */
-      background: rgba(255,255,255,0.4);
-      font-weight: bold;
-    }
-    /* Submenu styling */
+    .menu-item:hover { background: rgba(255,255,255,0.2); }
+    .menu-item:active { background: rgba(255,255,255,0.4); font-weight: bold; } /* <-- jan12'26: hilight active main menu */
+    
+    /* Submenu styling */ /* [Lines 47–60] Submenu items */
     .submenu {
       width: 100%;
       background: rgba(255,255,255,0.1);
@@ -59,19 +61,24 @@
       transition: background 0.3s;
       font-size: 0.95em; /* <-- jan12'26: slightly smaller text */
     }
-    .submenu-item:hover {
-      background: rgba(255,255,255,0.3);
-    }
-    .submenu-item:active{  /* <-- jan12'26; highlight active submenu */
-      background: rgba(255,255,255,0.5);
-      font-weight: bold;
-    }
+    .submenu-item:hover { background: rgba(255,255,255,0.3); }
+    .submenu-item:active{ background: rgba(255,255,255,0.5); font-weight: bold; } /* <-- jan12'26; highlight active submenu */
 
-    /* Bottom status ribbon */
+    /* Main content area */ /* [Lines 61–80] Content area */
+    .content { flex: 1; padding: 20px; }
+    .tab { display: none; }
+    .tab.active { display: block; }
+
+    /* [Lines 81–95] Header styling */
+    header { background: linear-gradient(to right, #0077be, #00cc66); color: white; padding: 20px; text-align: center; }
+    header img { height: 60px; vertical-align: middle; margin-right: 10px; }
+    header h1 { display: inline-block; vertical-align: middle; font-size: 1.5em; margin: 0; }
+    header p { font-size: 0.9em; margin-top: 5px; }
+    
+    /* Bottom status ribbon */ /* [Lines 96–115] Bottom status ribbon */
     #statusRibbon {
       position: fixed;
-      bottom: 0;
-      left: 0;
+      bottom: 0; left: 0;
       width: 100%;
       background: linear-gradient(to right, #0077be, #00cc66);
       color: white;
@@ -81,63 +88,19 @@
       padding: 10px 20px;
       font-size: 0.9em;
     }
-    #statusMessages {
-      text-align: left;
-    }
-    #statusMessages p {
-      margin: 2px 0;
-    }
-    #continueBtn {
-      background: #ff9933;
-      border: none;
-      color: white;
-      padding: 8px 16px;
-      cursor: pointer;
-      border-radius: 4px;
-      font-weight: bold;
-      display: none; /* <-- NEW: hidden by default */
-    }
-    #continueBtn:hover {
-      background: #cc6600;
-    }
-
-    /* Main content area */
-    .content {
-      flex: 1;
-      padding: 20px;
-    }
-    .tab {
-      display: none;
-    }
-    .tab.active {
-      display: block;
-    }
-    header {
-      background: linear-gradient(to right, #0077be, #00cc66);
-      color: white;
-      padding: 20px;
-      text-align: center;
-    }
-    header img {
-      height: 60px;
-      vertical-align: middle;
-      margin-right: 10px;
-    }
-    header h1 {
-      display: inline-block;
-      vertical-align: middle;
-      font-size: 1.5em;
-      margin: 0;
-    }
-    header p {
-      font-size: 0.9em;
-      margin-top: 5px;
-    }
+    #statusRibbon.normal { background: linear-gradient(to right, #0077be, #00cc66); }
+    #statusRibbon.success { background: #00cc66; }
+    #statusRibbon.error { background: #cc0000; }
+    #statusRibbon.processing { background: #ffcc00; color: black; }
+    #statusMessages { text-align: left; }
+    #statusMessages p { margin: 2px 0; }
+    #continueBtn { background: #ff9933; border: none; color: white; padding: 8px 16px; cursor: pointer;
+      border-radius: 4px; font-weight: bold; display: none; } /* hidden by default */
+    #continueBtn:hover { background: #cc6600; }
   </style>
 </head>
-  
-<body>
-  <!-- Sidebar Ribbon -->
+<body> 
+  <!-- [Lines 120–145] Sidebar menu -->
    <div class="sidebar">
     <h2>Menu</h2>
     <!-- Main menu -->
@@ -160,7 +123,7 @@
     <div class="menu-item" onclick="showTab('about')">ℹ️ About</div>
   </div>
 
-  <!-- Content Area -->
+  <!-- [Lines 146–200] Content tabs -->
   <div class="content">
     <!-- Main Tab -->
     <div id="main" class="tab active">
@@ -172,77 +135,79 @@
       <p>Welcome to the main dashboard. Use the menu to navigate.</p>
     </div>
 
-    <!-- Sub Tabs under Data -->
-    <div id="openweather" class="tab">
-      <header><h1>OpenWeather API Data</h1></header>
-      <p>Weather-based renewable energy metrics will be displayed here.</p>
-    </div>
+    <!-- Sub Tabs under Data, API tabs -->
+    <div id="openweather" class="tab"><header><h1>OpenWeather API Data</h1></header>
+      <p>Weather-based renewable energy metrics will be displayed here.</p></div>
+    <div id="nasa" class="tab"><header><h1>NASA Power API Data</h1></header>
+      <p>NASA POWER datasets for solar and wind energy will be displayed here.</p></div>
+    <div id="solcast" class="tab"><header><h1>Solcast API Data</h1></header>
+      <p>Solar irradiance and forecast data from Solcast will be displayed here.</p></div>
+    <div id="pvoutput" class="tab"><header><h1>PVOutput API Data</h1></header>
+      <p>PV system output and performance data from PVOutput will be displayed here.</p></div>
 
-    <div id="nasa" class="tab">
-      <header><h1>NASA Power API Data</h1></header>
-      <p>NASA POWER datasets for solar and wind energy will be displayed here.</p>
-    </div>
+    <!-- Non-API tabs -->
+    <div id="download" class="tab"><header><h1>Download</h1></header>
+      <p>Resources and datasets available for download.</p></div>
+    <div id="guides" class="tab"><header><h1>Guides</h1></header>
+      <p>User guides and documentation for APIs and dashboard usage.</p></div>
+    <div id="register" class="tab"><header><h1>Register</h1></header>
+      <p>Registration form or instructions will appear here.</p></div>
+    <div id="terms" class="tab"><header><h1>Terms & Conditions</h1></header>
+      <p>Legal terms and conditions for using this dashboard.</p></div>
+    <div id="about" class="tab"><header><h1>About</h1></header>
+      <p>Information about this project and its purpose.</p></div>
 
-    <div id="solcast" class="tab">
-      <header><h1>Solcast API Data</h1></header>
-      <p>Solar irradiance and forecast data from Solcast will be displayed here.</p>
-    </div>
-
-    <div id="pvoutput" class="tab">
-      <header><h1>PVOutput API Data</h1></header>
-      <p>PV system output and performance data from PVOutput will be displayed here.</p>
-    </div>
-
-        <div id="download" class="tab">
-      <header><h1>Download</h1></header>
-      <p>Resources and datasets available for download.</p>
-    </div>
-
-    <div id="guides" class="tab">
-      <header><h1>Guides</h1></header>
-      <p>User guides and documentation for APIs and dashboard usage.</p>
-    </div>
-
-    <div id="register" class="tab">
-      <header><h1>Register</h1></header>
-      <p>Registration form or instructions will appear here.</p>
-    </div>
-
-    <div id="terms" class="tab">
-      <header><h1>Terms & Conditions</h1></header>
-      <p>Legal terms and conditions for using this dashboard.</p>
-    </div>
-
-    <div id="about" class="tab">
-      <header><h1>About</h1></header>
-      <p>Information about this project and its purpose.</p>
-    </div>
-
-    <!-- Bottom Ribbon for Status -->
+    <!-- [Lines 201–215] Bottom status ribbon -->
       <div id="statusRibbon">
-      <div id="statusMessages">
-      <p id="statusLine1">System ready.</p>
-      <p id="statusLine2">Awaiting actions...</p>
+        <div id="statusMessages">
+          <p id="statusLine1">System ready.</p>
+          <p id="statusLine2">Awaiting actions...</p>
+        </div>
+        <button id="continueBtn" onclick="continueExecution()">Continue</button>
       </div>
-      <button id="continueBtn" onclick="continueExecution()">Continue</button>
   </div>
 
-  </div>
-
+  <!-- [Lines 216–250] JavaScript -->
   <script>
     // ✅ Tab switching function
-    function showTab(tabId) {
-      document.querySelectorAll('.tab').forEach(tab => {
-        tab.classList.remove('active');
-      });
+       function showTab(tabId) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
       document.getElementById(tabId).classList.add('active');
+
+      document.querySelectorAll('.menu-item, .submenu-item').forEach(item => item.classList.remove('active'));
+      const clickedItem = [...document.querySelectorAll('.menu-item, .submenu-item')]
+        .find(item => item.getAttribute('onclick')?.includes(tabId));
+      if (clickedItem) {
+        clickedItem.classList.add('active');
+        if (clickedItem.classList.contains('submenu-item')) {
+          document.querySelector('.menu-item[onclick="toggleSubmenu()"]').classList.add('active');
+        }
+      }
     }
 
-    // ✅ Toggle submenu visibility
+    // [Lines 236–245] Toggle submenu visibility
     function toggleSubmenu() {
       const submenu = document.getElementById('dataSubmenu');
-      submenu.style.display = submenu.style.display === 'flex' ? 'none' : 'flex';
-    }
+      submenu.style.display = submenu.style.display === 'flex' ? 'none' :'flex';
+    
+    // [Lines 246–260] Continue execution after error pause 
+    function continueExecution() { updateStatus("▶ Continuing...", "Resuming functions..."); 
+      refreshData(); 
+      document.getElementById('continueBtn').style.display = 'none'; // hide button again 
+      } 
+    
+    // [Lines 261–275] Update status ribbon messages 
+    function updateStatus(line1, line2) { 
+      document.getElementById('statusRibbon').className = 'normal'; // default state 
+      document.getElementById('statusLine1').textContent = line1; 
+      document.getElementById('statusLine2').textContent = line2; 
+      } 
+    // [Lines 276–285] Pause execution on error 
+    function pauseOnError(errorMsg) { 
+      document.getElementById('statusRibbon').className = 'error'; // red background 
+      updateStatus("⚠️ Error occurred", errorMsg); 
+      document.getElementById('continueBtn').style.display = 'inline-block'; // show button 
+      }
   </script>
 </body>
 </html>
