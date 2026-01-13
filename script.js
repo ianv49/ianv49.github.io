@@ -3,8 +3,8 @@
 // ===============================
 // These keys are used to authenticate with OpenWeather API.
 // windKey is used for wind-related data, solarKey for solar-related data.
-const windKey = '0723d71a05e58ae3f7fc91e39a901e6b';   // wind1
-const solarKey = 'e645925cfe8367841ad656678b7c3acc';  // solar1
+const windKey = '0723d71a05e58ae3f7fc91e39a901e6b';   // wind1 [0723d71a05e58ae3f7fc91e39a901e6b]
+const solarKey = 'e645925cfe8367841ad656678b7c3acc';  // solar1 [e645925cfe8367841ad656678b7c3acc]
 
 // ===============================
 // CHART INSTANCES
