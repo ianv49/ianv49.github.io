@@ -78,9 +78,9 @@
     /* Bottom status ribbon */ /* [Lines 96–115] Bottom status ribbon */
     #statusRibbon {
       position: fixed;
-      bottom: 0; right: 0;  /* <-- move to right side */
+      top: 100px; right: 0;  /* <-- move to right side */
       width: 30ch;          /* <-- fixed width ~30 characters */
-      height: 100%;                  /* full height column */
+      height: calc(100% - 100px);                  /* subtract header height */
       overflow-y: auto;              /* scroll if >20 rows */
       background: linear-gradient(to top, #0077be, #00cc66);
       color: white;
@@ -199,9 +199,10 @@
 
     <!-- [Lines 201–215] Bottom status ribbon -->
       <div id="statusRibbon">
+        <div id="statusLabel">Status: Waiting</div>
         <div id="statusMessages">
           <!-- Log stream will append <p> entries here -->
-        </div>    
+        </div>   
         <button id="continueBtn" onclick="continueExecution()">Continue</button>
       </div>
   </div>
@@ -236,11 +237,33 @@
       } 
     
     // [Lines 261–275] Update status ribbon messages 
-    function updateStatus(line1, line2) { 
-      document.getElementById('statusRibbon').className = 'normal'; // default state 
-      document.getElementById('statusLine1').textContent = line1; 
-      document.getElementById('statusLine2').textContent = line2; 
-      } 
+    function updateStatus(line1, line2) {
+        const log = document.getElementById('statusMessages');
+        const entry = document.createElement('p');
+        entry.textContent = `${line1} - ${line2}`;
+        log.appendChild(entry);
+
+        // Keep only last 20 rows
+        while (log.children.length > 20) {
+          log.removeChild(log.firstChild);
+        }
+
+        // Update label depending on keywords
+        const label = document.getElementById('statusLabel');
+        if (line1.includes("Loading") || line1.includes("Drawing")) {
+          label.textContent = "Status: Running";
+        } else if (line1.includes("Error") || line1.includes("Paused")) {
+          label.textContent = "Status: Waiting";
+        } else if (line1.includes("✅") || line1.includes("Done")) {
+          label.textContent = "Status: Done";
+        } else {
+          label.textContent = "Status: Waiting";
+        }
+
+        document.getElementById('statusRibbon').className = 'normal';  // default state
+      }
+  
+
     // [Lines 276–285] Pause execution on error 
     function pauseOnError(errorMsg) { 
       document.getElementById('statusRibbon').className = 'error'; // red background 
