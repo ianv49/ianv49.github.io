@@ -78,9 +78,9 @@
     /* Bottom status ribbon */ /* [Lines 96–115] Bottom status ribbon */
     #statusRibbon {
       position: fixed;
-      top: 100px; right: 0;  /* <-- move to right side */
+      top: 0; right: 0;  /* <-- move to right side */
       width: 30ch;          /* <-- fixed width ~30 characters */
-      height: calc(100% - 100px);                  /* subtract header height */
+      height: 50%;                  /* avoid header overlap */
       overflow-y: auto;              /* scroll if >20 rows */
       background: linear-gradient(to top, #0077be, #00cc66);
       color: white;
