@@ -269,6 +269,12 @@
       updateStatus("⚠️ Error occurred", errorMsg); 
       document.getElementById('continueBtn').style.display = 'inline-block'; // show button 
       }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateStatus("🚀 Initializing...", "Loading default city data...");
+      refreshData();
+    });
+  
   </script>
 </body>
 </html>
