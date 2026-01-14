@@ -2,15 +2,56 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>OpenWeather Wind & Solar Data</title>
+  <title>AI-Driven Predictive Maintenance for Renewable Energy Assets</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Icon image -->
+  <link rel="icon" type="image/png" href="docs/assets/logo_kalbariSun1.jpeg">
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      padding: 20px;
+      padding: 0;
+      display: flex;
       background: #f0f8ff;
       color: #333;
+    }
+    /* Sidebar ribbon */
+    .sidebar {
+      width: 220px;
+      background: linear-gradient(to bottom, #0077be, #00cc66);
+      color: white;
+      height: 50vh; /* 50% of screen height */
+      position: fixed;
+      top: 0;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding-top: 20px;
+      overflow-y: auto;
+    }
+    .sidebar h2 {
+      margin-left: 15px;
+      margin-bottom: 20px;
+    }
+    .menu-item {
+      width: 100%;
+      padding: 15px;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .menu-item:hover { background: rgba(255,255,255,0.2); }
+    .menu-item a {
+      color: white;
+      text-decoration: none;
+      display: block;
+    }
+    /* Content area */
+    .content {
+      margin-left: 240px; /* space for sidebar */
+      padding: 20px;
+      flex: 1;
     }
     header {
       background: linear-gradient(to right, #0077be, #00cc66);
@@ -18,6 +59,9 @@
       padding: 20px;
       text-align: center;
     }
+    header img { height: 60px; vertical-align: middle; margin-right: 10px; }
+    header h1 { display: inline-block; vertical-align: middle; font-size: 1.5em; margin: 0; }
+    header p { font-size: 0.9em; margin-top: 5px; }
     table {
       border-collapse: collapse;
       width: 100%;
@@ -30,8 +74,8 @@
     }
     #statusRibbon {
       margin-top: 20px;
-      max-height: calc(1.2em * 30); /* show max ~30 rows */
-      overflow-y: auto;             /* scroll if more */
+      max-height: calc(1.2em * 30);
+      overflow-y: auto;
       background: #0077be;
       color: white;
       padding: 10px;
@@ -44,46 +88,79 @@
       font-weight: bold;
       cursor: pointer;
     }
+    section { margin-bottom: 40px; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>OpenWeather Wind & Solar Data</h1>
-    <p>Displaying forecasted values</p>
-  </header>
+  <!-- Sidebar Menu -->
+  <div class="sidebar">
+    <h2>Menu</h2>
+    <div class="menu-item"><a href="#openweather">🌤️ OpenWeather API</a></div>
+    <div class="menu-item"><a href="#download">⬇️ Download</a></div>
+    <div class="menu-item"><a href="#guides">📘 Guides</a></div>
+    <div class="menu-item"><a href="#about">ℹ️ About</a></div>
+  </div>
 
-  <label for="citySelect">Select City:</label>
-  <select id="citySelect">
-    <option value="Manila">Manila</option>
-    <option value="Tokyo">Tokyo</option>
-    <option value="Sydney">Sydney</option>
-  </select>
-  <button onclick="refreshData()">🔄 Refresh Data</button>
+  <!-- Main Content -->
+  <div class="content">
+    <header>
+      <img src="docs/assets/logo_kalbariSun1.jpeg" alt="Logo">
+      <h1>AI-Driven Predictive Maintenance for Renewable Energy Assets</h1>
+      <p>Using Web-Sourced Sensor Data</p>
+    </header>
 
-  <!-- Table 1: Wind -->
-  <h2>Wind Data</h2>
-  <table id="windTable">
-    <thead>
-      <tr><th>DateTime</th><th>Wind Speed (m/s)</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+    <!-- OpenWeather Section -->
+    <section id="openweather">
+      <h2>OpenWeather API Data</h2>
+      <label for="citySelect">Select City:</label>
+      <select id="citySelect">
+        <option value="Manila">Manila</option>
+        <option value="Tokyo">Tokyo</option>
+        <option value="Sydney">Sydney</option>
+      </select>
+      <button onclick="refreshData()">🔄 Refresh Data</button>
 
-  <!-- Table 2: Solar -->
-  <h2>Solar Data</h2>
-  <table id="solarTable">
-    <thead>
-      <tr><th>DateTime</th><th>Temperature (°C)</th><th>Humidity (%)</th><th>Cloud Cover (%)</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+      <!-- Wind Table -->
+      <h3>Wind Data</h3>
+      <table id="windTable">
+        <thead>
+          <tr><th>DateTime</th><th>Wind Speed (m/s)</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
 
-  <!-- Save Log Button -->
-  <button onclick="saveLogToFile()">💾 Save Log File</button>
+      <!-- Solar Table -->
+      <h3>Solar Data</h3>
+      <table id="solarTable">
+        <thead>
+          <tr><th>DateTime</th><th>Temperature (°C)</th><th>Humidity (%)</th><th>Cloud Cover (%)</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
 
-  <!-- Status Ribbon -->
-  <div id="statusRibbon">
-    <div id="statusMessages"></div>
+    <!-- Download Section -->
+    <section id="download">
+      <h2>Download</h2>
+      <button onclick="saveLogToFile()">💾 Save Log File</button>
+    </section>
+
+    <!-- Guides Section -->
+    <section id="guides">
+      <h2>Guides</h2>
+      <p>User guides and documentation for APIs and dashboard usage.</p>
+    </section>
+
+    <!-- About Section -->
+    <section id="about">
+      <h2>About</h2>
+      <p>Information about this project and its purpose.</p>
+    </section>
+
+    <!-- Status Ribbon -->
+    <div id="statusRibbon">
+      <div id="statusMessages"></div>
+    </div>
   </div>
 
   <script src="script.js"></script>
