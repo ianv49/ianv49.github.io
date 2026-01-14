@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <title>AI-Driven Predictive Maintenance for Renewable Energy Assets</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <!-- [Lines 8–70] CSS Styles -->
   <style>
     /* [Lines 10–20] Base body styling */
@@ -16,8 +17,8 @@
       background: #f0f8ff;
       color: #333;
     }
-    /* Sidebar ribbon */
-    /* [Lines 21–35] Sidebar ribbon styling */
+
+    /* [Lines 21–35] Sidebar styling */
     .sidebar {
       width: 220px;
       background: linear-gradient(to bottom, #0077be, #00cc66);
@@ -25,80 +26,98 @@
       height: 100vh;
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: flex-start;
       padding-top: 20px;
     }
-    .sidebar h2 {
-      margin-bottom: 20px;
-    }
-        /* [Lines 36–45] Main menu items */
+    .sidebar h2 { margin-bottom: 20px; }
+
+    /* [Lines 36–45] Main menu items */
     .menu-item {
       width: 100%;
       padding: 15px;
-      text-align: left; /* <-- jan12'26: left align text */
+      text-align: left;
       cursor: pointer;
-      transition: background 0.3s; 
+      transition: background 0.3s;
     }
     .menu-item:hover { background: rgba(255,255,255,0.2); }
-    .menu-item:active { background: rgba(255,255,255,0.4); font-weight: bold; } /* <-- jan12'26: hilight active main menu */
-        /* Submenu styling */ /* [Lines 47–60] Submenu items */
+    .menu-item.active { background: rgba(255,255,255,0.4); font-weight: bold; }
+
+    /* [Lines 47–60] Submenu items */
     .submenu {
       width: 100%;
       background: rgba(255,255,255,0.1);
       display: none;
       flex-direction: column;
-      align-items: flex-start;   /* <-- jan12'26: left align items */
-      padding-left: 10px;        /* <-- jan12'26: add left padding */
+      align-items: flex-start;
+      padding-left: 10px;
     }
     .submenu-item {
-      width: 100%;               /* <-- jan12'26: full width for left alignment */
-      padding: 10px 15px; /* <-- jan12'26: extra left padding */
-      text-align: left;          /* <-- jan12'26: left align text */
+      width: 100%;
+      padding: 10px 15px;
+      text-align: left;
       cursor: pointer;
       transition: background 0.3s;
-      font-size: 0.95em; /* <-- jan12'26: slightly smaller text */
+      font-size: 0.95em;
     }
     .submenu-item:hover { background: rgba(255,255,255,0.3); }
-    .submenu-item:active{ background: rgba(255,255,255,0.5); font-weight: bold; } /* <-- jan12'26; highlight active submenu */
-    /* Main content area */ /* [Lines 61–80] Content area */
+    .submenu-item.active { background: rgba(255,255,255,0.5); font-weight: bold; }
+
+    /* [Lines 61–80] Content area */
     .content { flex: 1; padding: 20px; }
     .tab { display: none; }
     .tab.active { display: block; }
+
     /* [Lines 81–95] Header styling */
-    header { background: linear-gradient(to right, #0077be, #00cc66); color: white; padding: 20px; text-align: center; }
+    header {
+      background: linear-gradient(to right, #0077be, #00cc66);
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
     header img { height: 60px; vertical-align: middle; margin-right: 10px; }
     header h1 { display: inline-block; vertical-align: middle; font-size: 1.5em; margin: 0; }
-    header p { font-size: 0.9em; margin-top: 5px; }  
-    /* Bottom status ribbon */ /* [Lines 96–115] Bottom status ribbon */
+    header p { font-size: 0.9em; margin-top: 5px; }
+
+    /* [Lines 96–115] Status ribbon */
     #statusRibbon {
-      position: fixed;
-      bottom: 0; right: 0;  /* <-- move to right side */
-      width: 20ch;          /* <-- fixed width ~30 characters */
-      height: 50%;                  /* avoid header overlap */
-      overflow-y: auto;              /* scroll if >20 rows */
-      background: linear-gradient(to top, #0077be, #00cc66);
-      color: white;
-      display: flex;
-      flex-direction: column;        /* stack messages vertically */
-      justify-content: flex-start;
-      align-items: flex-start;
-      padding: 10px;
-      font-size: 0.9em;
+    position: fixed;
+    top: 100px; right: 0;
+    width: 30ch;
+    max-height: calc(1.2em * 30);   /* show max ~30 rows visible */
+    overflow-y: auto;               /* scroll if more than 30 rows */
+    background: linear-gradient(to top, #0077be, #00cc66);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    padding: 10px;
+    font-size: 0.9em;
     }
+
     #statusRibbon.normal { background: linear-gradient(to right, #0077be, #00cc66); }
     #statusRibbon.success { background: #00cc66; }
     #statusRibbon.error { background: #cc0000; }
     #statusRibbon.processing { background: #ffcc00; color: black; }
+    #statusLabel { font-weight: bold; margin-bottom: 10px; }
     #statusMessages { text-align: left; }
     #statusMessages p { margin: 2px 0; }
-    #continueBtn { background: #ff9933; border: none; color: white; padding: 8px 16px; cursor: pointer;
-      border-radius: 4px; font-weight: bold; display: none; } /* hidden by default */
+    #continueBtn {
+      background: #ff9933;
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-weight: bold;
+      display: none;
+    }
     #continueBtn:hover { background: #cc6600; }
   </style>
-</head>
+</head>  
 <body> 
   <!-- [Lines 120–145] Sidebar menu -->
-   <div class="sidebar">
+  <div class="sidebar">
     <h2>Menu</h2>
     <!-- Main menu -->
     <div class="menu-item" onclick="showTab('main')">Main</div>
@@ -110,13 +129,14 @@
       <div class="submenu-item" onclick="showTab('solcast')">☀️ [3] Solcast API</div>
       <div class="submenu-item" onclick="showTab('pvoutput')">🔋 [4] PVOutput API</div>
     </div>
-    <!-- Non-API items as separate main menu entries -->
+    <!-- Non-API items -->
     <div class="menu-item" onclick="showTab('download')">⬇️ Download</div>
     <div class="menu-item" onclick="showTab('guides')">📘 Guides</div>
     <div class="menu-item" onclick="showTab('register')">📝 Register</div>
     <div class="menu-item" onclick="showTab('terms')">📑 Terms & Conditions</div>
     <div class="menu-item" onclick="showTab('about')">ℹ️ About</div>
   </div>
+
   <!-- [Lines 146–200] Content tabs -->
   <div class="content">
     <!-- Main Tab -->
@@ -127,70 +147,83 @@
         <p>Using Web-Sourced Sensor Data</p>
       </header>
       <p>Welcome to the main dashboard. Use the menu to navigate.</p>
-      <button onclick="refreshData()">🔄 Refresh Data</button> <!-- fix, change1 jan13 -->
+      <button onclick="refreshData()">🔄 Refresh Data</button>
     </div>
-    <!-- Sub Tabs under Data, API tabs -->
-    <div id="openweather" class="tab"><header><h1>OpenWeather API Data</h1></header>
-        <select id="citySelect"> <!-- fix, change2 jan13 -->
-          <option value="Manila">Manila</option> 
-          <option value="Tokyo">Tokyo</option> 
-          <option value="Sydney">Sydney</option> 
-        </select> 
-        <table id="windTable" border="1"> 
-          <thead> 
-            <tr><th>DateTime</th><th>Wind Speed</th><th>Pressure</th><th>Humidity</th></tr> 
-          </thead> 
-          <tbody></tbody> 
-        </table> 
-        <canvas id="windSpeedChart"></canvas> 
-        <canvas id="windPressureChart"></canvas> 
-        <canvas id="windHumidityChart"></canvas>      
-      <p>Weather-based renewable energy metrics will be displayed here.</p></div>    
+
+    <!-- OpenWeather Tab -->
+    <div id="openweather" class="tab">
+      <header><h1>OpenWeather API Data</h1></header>
+      <select id="citySelect">
+        <option value="Manila">Manila</option>
+        <option value="Tokyo">Tokyo</option>
+        <option value="Sydney">Sydney</option>
+      </select>
+      <table id="windTable" border="1">
+        <thead>
+          <tr><th>DateTime</th><th>Wind Speed</th><th>Pressure</th><th>Humidity</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <canvas id="windSpeedChart"></canvas>
+      <canvas id="windPressureChart"></canvas>
+      <canvas id="windHumidityChart"></canvas>
+      <p>Weather-based renewable energy metrics will be displayed here.</p>
+    </div>
+
+    <!-- NASA Tab -->
     <div id="nasa" class="tab"><header><h1>NASA Power API Data</h1></header>
-      <p>NASA POWER datasets for solar and wind energy will be displayed here.</p></div>    
-    <div id="solcast" class="tab"><header><h1>Solcast API Data</h1></header>
-      <!-- fix, change3 jan13 -->
-        <table id="solarTable" border="1"> 
-          <thead> 
-            <tr><th>DateTime</th><th>Temperature</th><th>Humidity</th><th>Cloud Cover</th></tr> 
-          </thead> 
-          <tbody></tbody> 
-        </table> 
-        <canvas id="solarTempChart"></canvas> 
-        <canvas id="solarHumidityChart"></canvas> 
-        <canvas id="solarCloudChart"></canvas>
-      <p>Solar irradiance and forecast data from Solcast will be displayed here.</p></div>    
+      <p>NASA POWER datasets for solar and wind energy will be displayed here.</p>
+    </div>
+
+    <!-- Solcast Tab -->
+    <div id="solcast" class="tab">
+      <header><h1>Solcast API Data</h1></header>
+      <table id="solarTable" border="1">
+        <thead>
+          <tr><th>DateTime</th><th>Temperature</th><th>Humidity</th><th>Cloud Cover</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <canvas id="solarTempChart"></canvas>
+      <canvas id="solarHumidityChart"></canvas>
+      <canvas id="solarCloudChart"></canvas>
+      <p>Solar irradiance and forecast data from Solcast will be displayed here.</p>
+    </div>
+
+    <!-- PVOutput Tab -->
     <div id="pvoutput" class="tab"><header><h1>PVOutput API Data</h1></header>
-      <p>PV system output and performance data from PVOutput will be displayed here.</p></div>
-    <!-- Non-API tabs -->
+      <p>PV system output and performance data from PVOutput will be displayed here.</p>
+    </div>
+
+    <!-- Other Tabs -->
     <div id="download" class="tab"><header><h1>Download</h1></header>
-      <p>Resources and datasets available for download.</p></div>    
+      <p>Resources and datasets available for download.</p></div>
     <div id="guides" class="tab"><header><h1>Guides</h1></header>
-      <label> 
-        <input type="checkbox" id="debugToggle" onchange="toggleDebugMode()"> Enable Debug Mode 
-      </label> 
+      <label>
+        <input type="checkbox" id="debugToggle" onchange="toggleDebugMode()"> Enable Debug Mode
+      </label>
       <p>When enabled, functions will pause before execution. Use the Continue button to step through.</p>
       <p>User guides and documentation for APIs and dashboard usage.</p>
-    </div>    
+    </div>
     <div id="register" class="tab"><header><h1>Register</h1></header>
       <p>Registration form or instructions will appear here.</p></div>
     <div id="terms" class="tab"><header><h1>Terms & Conditions</h1></header>
       <p>Legal terms and conditions for using this dashboard.</p></div>
     <div id="about" class="tab"><header><h1>About</h1></header>
       <p>Information about this project and its purpose.</p></div>
-    <!-- [Lines 201–215] Bottom status ribbon -->
-      <div id="statusRibbon">
-        <div id="statusLabel">Status: Waiting</div>
-        <div id="statusMessages">
-          <!-- Log stream will append <p> entries here -->
-        </div>   
-        <button id="continueBtn" onclick="continueExecution()">Continue</button>
-      </div>
+
+    <!-- [Lines 201–215] Status ribbon -->
+    <div id="statusRibbon" class="normal">
+      <div id="statusLabel">Status: Waiting</div>
+      <div id="statusMessages"><!-- Log stream will append <p> entries here --></div>
+      <button id="continueBtn" onclick="continueExecution()">Continue</button>
+    </div>
   </div>
+
   <!-- [Lines 216–250] JavaScript -->
   <script>
-    // ✅ Tab switching function
-       function showTab(tabId) {
+    // ✅ Tab switching
+    function showTab(tabId) {
       document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
       document.getElementById(tabId).classList.add('active');
 
@@ -204,49 +237,64 @@
         }
       }
     }
-    // [Lines 236–245] Toggle submenu visibility
+
+    // Toggle submenu
     function toggleSubmenu() {
       const submenu = document.getElementById('dataSubmenu');
-      submenu.style.display = submenu.style.display === 'flex' ? 'none' :'flex';
+      submenu.style.display = submenu.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    // Continue execution after pause
+    function continueExecution() {
+      updateStatus("▶ Continuing...", "Resuming functions...");
+      document.getElementById('statusRibbon').className = 'processing';
+      if (window.debugNextStep) {
+        const step = window.debugNextStep;
+        window.debugNextStep = null;
+        step(); // resume paused function
+      } else {
+        refreshData(); // normal resume
       }
-    // [Lines 246–260] Continue execution after error pause 
-    function continueExecution() { updateStatus("▶ Continuing...", "Resuming functions..."); 
-      refreshData(); 
-      document.getElementById('continueBtn').style.display = 'none'; // hide button again 
-      }     
-    // [Lines 261–275] Update status ribbon messages 
+      document.getElementById('continueBtn').style.display = 'none';
+    }
+
+    // Update status with timestamp
     function updateStatus(line1, line2) {
-        const log = document.getElementById('statusMessages');
-        const entry = document.createElement('p');
-        entry.textContent = `${line1} - ${line2}`;
-        log.appendChild(entry);
-        // Keep only last 20 rows
-        while (log.children.length > 20) {
-          log.removeChild(log.firstChild);
-        }
-        // Update label depending on keywords
-        const label = document.getElementById('statusLabel');
-        if (line1.includes("Loading") || line1.includes("Drawing")) {
-          label.textContent = "Status: Running";
-        } else if (line1.includes("Error") || line1.includes("Paused")) {
-          label.textContent = "Status: Waiting";
-        } else if (line1.includes("✅") || line1.includes("Done")) {
-          label.textContent = "Status: Done";
-        } else {
-          label.textContent = "Status: Waiting";
-        }
-        document.getElementById('statusRibbon').className = 'normal';  // default state
-      }  
-    // [Lines 276–285] Pause execution on error 
-    function pauseOnError(errorMsg) { 
-      document.getElementById('statusRibbon').className = 'error'; // red background 
-      updateStatus("⚠️ Error occurred", errorMsg); 
-      document.getElementById('continueBtn').style.display = 'inline-block'; // show button 
+      const log = document.getElementById('statusMessages');
+      const now = new Date();
+      const timestamp = now.toLocaleTimeString('en-US', { hour12: false });
+      const entry = document.createElement('p');
+      entry.textContent = `[${timestamp}] ${line1} - ${line2}`;
+      log.appendChild(entry);
+      while (log.children.length > 20) {
+        log.removeChild(log.firstChild);
       }
+      log.scrollTop = log.scrollHeight;
+      const label = document.getElementById('statusLabel');
+      if (line1.includes("Loading") || line1.includes("Drawing") || line1.includes("Refreshing")) {
+        label.textContent = "Status: Running";
+      } else if (line1.includes("Error") || line1.includes("Paused")) {
+        label.textContent = "Status: Waiting";
+      } else if (line1.includes("✅") || line1.includes("Done") || line1.includes("ready")) {
+        label.textContent = "Status: Done";
+      } else {
+        label.textContent = "Status: Waiting";
+      }
+      document.getElementById('statusRibbon').className = 'normal';
+    }
+
+    // Pause on error
+    function pauseOnError(errorMsg) {
+      document.getElementById('statusRibbon').className = 'error';
+      updateStatus("⚠️ Error occurred", errorMsg);
+      document.getElementById('continueBtn').style.display = 'inline-block';
+    }
+
+    // Initial load
     document.addEventListener('DOMContentLoaded', () => {
       updateStatus("🚀 Initializing...", "Loading default city data...");
       refreshData();
-    });  
+    });
   </script>
 </body>
 </html>

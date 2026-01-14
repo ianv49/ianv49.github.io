@@ -47,10 +47,13 @@ async function refreshData() {
 // ===============================
 // Fetches forecast data from OpenWeather API for wind parameters.
 // Populates the wind table and draws charts for wind speed, pressure, and humidity.
+// ===============================
+// LOAD WIND DATA
+// ===============================
 async function loadWindData(city) {
-  updateStatus("🌬️ Loading wind data...", `City: ${city}`);
+  updateStatus("🌬️ Step 1: Fetching wind data...", `City: ${city}`);
   document.getElementById('statusRibbon').className = 'processing';
-  await sleep(500); // visible wait
+  await sleep(500);
 
   if (debugPause(() => loadWindData(city))) return;
 
@@ -62,12 +65,10 @@ async function loadWindData(city) {
       throw new Error(`Invalid wind API response: ${JSON.stringify(data).slice(0, 120)}...`);
     }
 
-    if (debugMode) {
-      updateStatus("🐞 Debug: Wind API response received", `Entries: ${data.list.length}`);
-      await sleep(500);
-    }
+    updateStatus("🌬️ Step 2: Processing wind API response", `Entries: ${data.list.length}`);
+    await sleep(500);
 
-    updateStatus("📋 Updating wind table...", "Rendering rows");
+    updateStatus("📋 Step 3: Updating wind table...", "Rendering rows");
     const tableBody = document.querySelector('#windTable tbody');
     tableBody.innerHTML = '';
 
@@ -91,35 +92,35 @@ async function loadWindData(city) {
     }
     await sleep(500);
 
-    updateStatus("📊 Drawing wind charts...", "Speed, Pressure, Humidity");
+    updateStatus("📊 Step 4: Drawing wind charts...", "Speed, Pressure, Humidity");
     await sleep(500);
     await drawBarChart('windSpeedChart', labels, windSpeeds, 'Wind Speed (m/s)', '#0077be');
     await drawBarChart('windPressureChart', labels, pressures, 'Pressure (hPa)', '#00cc66');
     await drawBarChart('windHumidityChart', labels, humidities, 'Humidity (%)', '#ff9933');
 
     document.getElementById('statusRibbon').className = 'success';
-    updateStatus("✅ Wind charts ready", "Table updated successfully");
+    updateStatus("✅ Step 5: Wind charts ready", "Table updated successfully");
     document.getElementById('statusLabel').textContent = "Status: Done";
   } catch (err) {
     console.error('Error loading wind data:', err);
     document.getElementById('statusRibbon').className = 'error';
-    if (debugMode) {
-      pauseOnError(`Wind API error: ${err.message || err}`);
-    } else {
-      pauseOnError("Wind data fetch failed.");
-    }
+    pauseOnError(`Wind API error: ${err.message || err}`);
   }
 }
+
 
 // ===============================
 // LOAD SOLAR DATA
 // ===============================
 // Fetches forecast data from OpenWeather API for solar parameters.
 // Populates the solar table and draws charts for temperature, humidity, and cloud cover.
+// ===============================
+// LOAD SOLAR DATA
+// ===============================
 async function loadSolarData(city) {
-  updateStatus("🔆 Loading solar data...", `City: ${city}`);
+  updateStatus("🔆 Step 1: Fetching solar data...", `City: ${city}`);
   document.getElementById('statusRibbon').className = 'processing';
-  await sleep(500); // visible wait
+  await sleep(500);
 
   if (debugPause(() => loadSolarData(city))) return;
 
@@ -131,16 +132,13 @@ async function loadSolarData(city) {
       throw new Error(`Invalid solar API response: ${JSON.stringify(data).slice(0, 120)}...`);
     }
 
-    if (debugMode) {
-      updateStatus("🐞 Debug: Solar API response received", `Entries: ${data.list.length}`);
-      await sleep(500);
-    }
+    updateStatus("🔆 Step 2: Processing solar API response", `Entries: ${data.list.length}`);
+    await sleep(500);
 
-    updateStatus("📋 Updating solar table...", "Rendering rows");
+    updateStatus("📋 Step 3: Updating solar table...", "Rendering rows");
     const tableBody = document.querySelector('#solarTable tbody');
     tableBody.innerHTML = '';
-    
-    // Loop through 15 entries (10 past + 5 forecast)
+
     const temps = [], humidities = [], clouds = [], labels = [];
     for (let i = 0; i < Math.min(15, data.list.length); i++) {
       const entry = data.list[i];
@@ -149,8 +147,7 @@ async function loadSolarData(city) {
       temps.push(entry.main.temp);
       humidities.push(entry.main.humidity);
       clouds.push(entry.clouds.all);
-      
-      // Create table row with color-coded cells
+
       const row = document.createElement('tr');
       row.innerHTML = `
         <td>${dt}</td>
@@ -162,24 +159,19 @@ async function loadSolarData(city) {
     }
     await sleep(500);
 
-    // Draw charts for each parameter
-    updateStatus("📊 Drawing solar charts...", "Temperature, Humidity, Cloud Cover");
+    updateStatus("📊 Step 4: Drawing solar charts...", "Temperature, Humidity, Cloud Cover");
     await sleep(500);
     await drawBarChart('solarTempChart', labels, temps, 'Temperature (°C)', '#ff6666');
     await drawBarChart('solarHumidityChart', labels, humidities, 'Humidity (%)', '#3399ff');
     await drawBarChart('solarCloudChart', labels, clouds, 'Cloud Cover (%)', '#cccc00');
 
     document.getElementById('statusRibbon').className = 'success';
-    updateStatus("✅ Solar charts ready", "Table updated successfully");
+    updateStatus("✅ Step 5: Solar charts ready", "Table updated successfully");
     document.getElementById('statusLabel').textContent = "Status: Done";
   } catch (err) {
     console.error('Error loading solar data:', err);
     document.getElementById('statusRibbon').className = 'error';
-    if (debugMode) {
-      pauseOnError(`Solar API error: ${err.message || err}`);
-    } else {
-      pauseOnError("Solar data fetch failed.");
-    }
+    pauseOnError(`Solar API error: ${err.message || err}`);
   }
 }
 
@@ -253,24 +245,29 @@ function toggleDebugMode() {
 // ===============================
 
 // Update the two lines of status ribbon
+// ===============================
+// STATUS RIBBON FUNCTIONS
+// ===============================
 function updateStatus(line1, line2) {
   const log = document.getElementById('statusMessages');
-  // Generate timestamp
   const now = new Date();
   const timestamp = now.toLocaleTimeString('en-US', { hour12: false });
-  // Create log entry with timestamp
+
   const entry = document.createElement('p');
   entry.textContent = `[${timestamp}] ${line1} - ${line2}`;
   log.appendChild(entry);
-  // Keep only last 20 rows
-  while (log.children.length > 20) {
+
+  // Keep only last 50 rows in memory
+  while (log.children.length > 50) {
     log.removeChild(log.firstChild);
   }
+
   // Auto-scroll to latest entry
   log.scrollTop = log.scrollHeight;
+
   // Update label depending on keywords
   const label = document.getElementById('statusLabel');
-  if (line1.includes("Loading") || line1.includes("Drawing") || line1.includes("Refreshing")) {
+  if (line1.includes("Loading") || line1.includes("Drawing") || line1.includes("Refreshing") || line1.includes("Step")) {
     label.textContent = "Status: Running";
   } else if (line1.includes("Error") || line1.includes("Paused")) {
     label.textContent = "Status: Waiting";
@@ -279,7 +276,7 @@ function updateStatus(line1, line2) {
   } else {
     label.textContent = "Status: Waiting";
   }
-  // Default ribbon state unless overridden elsewhere
+
   document.getElementById('statusRibbon').className = 'normal';
 }
 
