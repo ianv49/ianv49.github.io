@@ -50,6 +50,9 @@ async function refreshData() {
 // ===============================
 // LOAD WIND DATA
 // ===============================
+// ===============================
+// LOAD WIND DATA
+// ===============================
 async function loadWindData(city) {
   updateStatus("🌬️ Step 1: Fetching wind data...", `City: ${city}`);
   document.getElementById('statusRibbon').className = 'processing';
@@ -58,7 +61,9 @@ async function loadWindData(city) {
   if (debugPause(() => loadWindData(city))) return;
 
   try {
-    const res = await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${windKey}`);
+    const res = await fetch(
+      `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${windKey}`
+    );
     const data = await res.json();
 
     if (!data?.list || !Array.isArray(data.list)) {
@@ -77,16 +82,22 @@ async function loadWindData(city) {
       const entry = data.list[i];
       const dt = new Date(entry.dt * 1000).toLocaleString();
       labels.push(dt);
-      windSpeeds.push(entry.wind.speed);
-      pressures.push(entry.main.pressure);
-      humidities.push(entry.main.humidity);
+
+      // ✅ Safe property access with fallback
+      const windSpeed = entry.wind?.speed ?? "N/A";
+      const pressure = entry.main?.pressure ?? "N/A";
+      const humidity = entry.main?.humidity ?? "N/A";
+
+      windSpeeds.push(windSpeed);
+      pressures.push(pressure);
+      humidities.push(humidity);
 
       const row = document.createElement('tr');
       row.innerHTML = `
         <td>${dt}</td>
-        <td style="background:${colorScale(entry.wind.speed, windSpeeds)}">${entry.wind.speed}</td>
-        <td style="background:${colorScale(entry.main.pressure, pressures)}">${entry.main.pressure}</td>
-        <td style="background:${colorScale(entry.main.humidity, humidities)}">${entry.main.humidity}</td>
+        <td style="background:${colorScale(windSpeed, windSpeeds)}">${windSpeed}</td>
+        <td style="background:${colorScale(pressure, pressures)}">${pressure}</td>
+        <td style="background:${colorScale(humidity, humidities)}">${humidity}</td>
       `;
       tableBody.appendChild(row);
     }
@@ -107,7 +118,6 @@ async function loadWindData(city) {
     pauseOnError(`Wind API error: ${err.message || err}`);
   }
 }
-
 
 // ===============================
 // LOAD SOLAR DATA
