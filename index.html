@@ -38,6 +38,12 @@
       font-size: 0.9em;
     }
     #statusMessages p { margin: 2px 0; }
+    button {
+      margin-top: 10px;
+      padding: 8px 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -72,6 +78,10 @@
     <tbody></tbody>
   </table>
 
+  <!-- Save Log Button -->
+  <button onclick="saveLogToFile()">💾 Save Log File</button>
+
+  <!-- Status Ribbon -->
   <div id="statusRibbon">
     <div id="statusMessages"></div>
   </div>

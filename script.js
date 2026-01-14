@@ -123,6 +123,28 @@ function updateStatus(line1, line2) {
 }
 
 // ===============================
+// SAVE LOG TO FILE
+// ===============================
+function saveLogToFile() {
+  const log = document.getElementById('statusMessages');
+  let content = "";
+  log.querySelectorAll('p').forEach(p => {
+    content += p.textContent + "\n";
+  });
+
+  // Create a blob and trigger download
+  const blob = new Blob([content], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "wind_solar_log.txt"; // filename
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+// ===============================
 // INITIAL LOAD
 // ===============================
 document.addEventListener('DOMContentLoaded', () => {
