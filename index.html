@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>OpenWeather Wind Data</title>
+  <title>OpenWeather Wind & Solar Data</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
@@ -42,8 +42,8 @@
 </head>
 <body>
   <header>
-    <h1>OpenWeather Wind Data</h1>
-    <p>Displaying forecasted wind speeds</p>
+    <h1>OpenWeather Wind & Solar Data</h1>
+    <p>Displaying forecasted values</p>
   </header>
 
   <label for="citySelect">Select City:</label>
@@ -54,9 +54,20 @@
   </select>
   <button onclick="refreshData()">🔄 Refresh Data</button>
 
+  <!-- Table 1: Wind -->
+  <h2>Wind Data</h2>
   <table id="windTable">
     <thead>
       <tr><th>DateTime</th><th>Wind Speed (m/s)</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- Table 2: Solar -->
+  <h2>Solar Data</h2>
+  <table id="solarTable">
+    <thead>
+      <tr><th>DateTime</th><th>Temperature (°C)</th><th>Humidity (%)</th><th>Cloud Cover (%)</th></tr>
     </thead>
     <tbody></tbody>
   </table>

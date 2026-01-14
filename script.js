@@ -1,7 +1,7 @@
 // ===============================
 // API KEY
 // ===============================
-const windKey = '0723d71a05e58ae3f7fc91e39a901e6b';
+const apiKey = '0723d71a05e58ae3f7fc91e39a901e6b';
 
 // Sleep utility
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -16,6 +16,9 @@ async function refreshData() {
   const city = document.getElementById('citySelect').value;
   updateStatus("🌬️ Fetching wind data...", `City: ${city}`);
   await loadWindData(city);
+
+  updateStatus("🔆 Fetching solar data...", `City: ${city}`);
+  await loadSolarData(city);
 }
 
 // ===============================
@@ -24,7 +27,7 @@ async function refreshData() {
 async function loadWindData(city) {
   try {
     const res = await fetch(
-      `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${windKey}`
+      `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${apiKey}`
     );
     const data = await res.json();
 
@@ -32,7 +35,7 @@ async function loadWindData(city) {
       throw new Error("Invalid API response");
     }
 
-    updateStatus("📋 Updating table...", "Rendering rows");
+    updateStatus("📋 Updating wind table...", "Rendering rows");
     const tableBody = document.querySelector('#windTable tbody');
     tableBody.innerHTML = '';
 
@@ -52,6 +55,48 @@ async function loadWindData(city) {
     updateStatus("✅ Wind data ready", "Table updated successfully");
   } catch (err) {
     console.error('Error loading wind data:', err);
+    updateStatus("⚠️ Error occurred", err.message || err);
+  }
+}
+
+// ===============================
+// LOAD SOLAR DATA
+// ===============================
+async function loadSolarData(city) {
+  try {
+    const res = await fetch(
+      `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${apiKey}`
+    );
+    const data = await res.json();
+
+    if (!data?.list || !Array.isArray(data.list)) {
+      throw new Error("Invalid API response");
+    }
+
+    updateStatus("📋 Updating solar table...", "Rendering rows");
+    const tableBody = document.querySelector('#solarTable tbody');
+    tableBody.innerHTML = '';
+
+    for (let i = 0; i < Math.min(15, data.list.length); i++) {
+      const entry = data.list[i];
+      const dt = new Date(entry.dt * 1000).toLocaleString();
+      const temp = entry.main?.temp ?? "N/A";
+      const humidity = entry.main?.humidity ?? "N/A";
+      const cloud = entry.clouds?.all ?? "N/A";
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${dt}</td>
+        <td>${temp}</td>
+        <td>${humidity}</td>
+        <td>${cloud}</td>
+      `;
+      tableBody.appendChild(row);
+    }
+
+    updateStatus("✅ Solar data ready", "Table updated successfully");
+  } catch (err) {
+    console.error('Error loading solar data:', err);
     updateStatus("⚠️ Error occurred", err.message || err);
   }
 }
