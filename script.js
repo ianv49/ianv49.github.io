@@ -7,101 +7,6 @@ const apiKey = '0723d71a05e58ae3f7fc91e39a901e6b';
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // ===============================
-// REFRESH FUNCTION
-// ===============================
-async function refreshData() {
-  updateStatus("🔄 Refreshing data...", "Preparing to load");
-  await sleep(500);
-
-  const city = document.getElementById('citySelect').value;
-  updateStatus("🌬️ Fetching wind data...", `City: ${city}`);
-  await loadWindData(city);
-
-  updateStatus("🔆 Fetching solar data...", `City: ${city}`);
-  await loadSolarData(city);
-}
-
-// ===============================
-// LOAD WIND DATA
-// ===============================
-async function loadWindData(city) {
-  try {
-    const res = await fetch(
-      `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${apiKey}`
-    );
-    const data = await res.json();
-
-    if (!data?.list || !Array.isArray(data.list)) {
-      throw new Error("Invalid API response");
-    }
-
-    updateStatus("📋 Updating wind table...", "Rendering rows");
-    const tableBody = document.querySelector('#windTable tbody');
-    tableBody.innerHTML = '';
-
-    for (let i = 0; i < Math.min(15, data.list.length); i++) {
-      const entry = data.list[i];
-      const dt = new Date(entry.dt * 1000).toLocaleString();
-      const windSpeed = entry.wind?.speed ?? "N/A";
-
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${dt}</td>
-        <td>${windSpeed}</td>
-      `;
-      tableBody.appendChild(row);
-    }
-
-    updateStatus("✅ Wind data ready", "Table updated successfully");
-  } catch (err) {
-    console.error('Error loading wind data:', err);
-    updateStatus("⚠️ Error occurred", err.message || err);
-  }
-}
-
-// ===============================
-// LOAD SOLAR DATA
-// ===============================
-async function loadSolarData(city) {
-  try {
-    const res = await fetch(
-      `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${apiKey}`
-    );
-    const data = await res.json();
-
-    if (!data?.list || !Array.isArray(data.list)) {
-      throw new Error("Invalid API response");
-    }
-
-    updateStatus("📋 Updating solar table...", "Rendering rows");
-    const tableBody = document.querySelector('#solarTable tbody');
-    tableBody.innerHTML = '';
-
-    for (let i = 0; i < Math.min(15, data.list.length); i++) {
-      const entry = data.list[i];
-      const dt = new Date(entry.dt * 1000).toLocaleString();
-      const temp = entry.main?.temp ?? "N/A";
-      const humidity = entry.main?.humidity ?? "N/A";
-      const cloud = entry.clouds?.all ?? "N/A";
-
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${dt}</td>
-        <td>${temp}</td>
-        <td>${humidity}</td>
-        <td>${cloud}</td>
-      `;
-      tableBody.appendChild(row);
-    }
-
-    updateStatus("✅ Solar data ready", "Table updated successfully");
-  } catch (err) {
-    console.error('Error loading solar data:', err);
-    updateStatus("⚠️ Error occurred", err.message || err);
-  }
-}
-
-// ===============================
 // STATUS RIBBON FUNCTIONS
 // ===============================
 function updateStatus(line1, line2) {
@@ -123,26 +28,118 @@ function updateStatus(line1, line2) {
 }
 
 // ===============================
-// SAVE LOG TO FILE (with table data)
+// CHART FUNCTIONS
+// ===============================
+function drawChart(canvasId, labels, data, label, color) {
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  if (window[canvasId]) window[canvasId].destroy();
+
+  window[canvasId] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: label,
+        data: data,
+        borderColor: color,
+        backgroundColor: color,
+        fill: false
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: true },
+        title: { display: true, text: label }
+      },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+
+function updateCharts(labels, windSpeeds, temps, humidities, clouds) {
+  drawChart('windChart', labels, windSpeeds, 'Wind Speed (m/s)', '#0077be');
+  drawChart('tempChart', labels, temps, 'Temperature (°C)', '#ff6666');
+  drawChart('humidityChart', labels, humidities, 'Humidity (%)', '#3399ff');
+  drawChart('cloudChart', labels, clouds, 'Cloud Cover (%)', '#cccc00');
+}
+
+// ===============================
+// REFRESH FUNCTION
+// ===============================
+async function refreshData() {
+  updateStatus("🔄 Refreshing data...", "Preparing to load");
+  await sleep(500);
+
+  const city = document.getElementById('citySelect').value;
+  try {
+    const res = await fetch(
+      `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${apiKey}`
+    );
+    const data = await res.json();
+
+    if (!data?.list || !Array.isArray(data.list)) {
+      throw new Error("Invalid API response");
+    }
+
+    const labels = [], windSpeeds = [], temps = [], humidities = [], clouds = [];
+    const windBody = document.querySelector('#windTable tbody');
+    const solarBody = document.querySelector('#solarTable tbody');
+    windBody.innerHTML = '';
+    solarBody.innerHTML = '';
+
+    for (let i = 0; i < Math.min(15, data.list.length); i++) {
+      const entry = data.list[i];
+      const dt = new Date(entry.dt * 1000).toLocaleString();
+      labels.push(dt);
+
+      const windSpeed = entry.wind?.speed ?? "N/A";
+      const temp = entry.main?.temp ?? "N/A";
+      const humidity = entry.main?.humidity ?? "N/A";
+      const cloud = entry.clouds?.all ?? "N/A";
+
+      windSpeeds.push(windSpeed);
+      temps.push(temp);
+      humidities.push(humidity);
+      clouds.push(cloud);
+
+      // Wind table row
+      const windRow = document.createElement('tr');
+      windRow.innerHTML = `<td>${dt}</td><td>${windSpeed}</td>`;
+      windBody.appendChild(windRow);
+
+      // Solar table row
+      const solarRow = document.createElement('tr');
+      solarRow.innerHTML = `<td>${dt}</td><td>${temp}</td><td>${humidity}</td><td>${cloud}</td>`;
+      solarBody.appendChild(solarRow);
+    }
+
+    updateCharts(labels, windSpeeds, temps, humidities, clouds);
+    updateStatus("✅ Data ready", "Tables and charts updated successfully");
+  } catch (err) {
+    console.error('Error loading data:', err);
+    updateStatus("⚠️ Error occurred", err.message || err);
+  }
+}
+
+// ===============================
+// SAVE LOG TO FILE
 // ===============================
 function saveLogToFile() {
   let content = "=== Status Log ===\n";
-  const log = document.getElementById('statusMessages');
-  log.querySelectorAll('p').forEach(p => {
+  document.querySelectorAll('#statusMessages p').forEach(p => {
     content += p.textContent + "\n";
   });
 
   content += "\n=== Wind Data Table ===\n";
-  const windRows = document.querySelectorAll('#windTable tbody tr');
-  windRows.forEach(row => {
+  document.querySelectorAll('#windTable tbody tr').forEach(row => {
     const cells = row.querySelectorAll('td');
     const rowText = Array.from(cells).map(td => td.textContent).join(" | ");
     content += rowText + "\n";
   });
 
   content += "\n=== Solar Data Table ===\n";
-  const solarRows = document.querySelectorAll('#solarTable tbody tr');
-  solarRows.forEach(row => {
+  document.querySelectorAll('#solarTable tbody tr').forEach(row => {
     const cells = row.querySelectorAll('td');
     const rowText = Array.from(cells).map(td => td.textContent).join(" | ");
     content += rowText + "\n";
@@ -154,7 +151,7 @@ function saveLogToFile() {
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = "wind_solar_log.txt"; // filename
+  a.download = "wind_solar_log.txt";
   a.click();
 
   URL.revokeObjectURL(url);
