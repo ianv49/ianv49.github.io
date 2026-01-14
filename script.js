@@ -123,13 +123,29 @@ function updateStatus(line1, line2) {
 }
 
 // ===============================
-// SAVE LOG TO FILE
+// SAVE LOG TO FILE (with table data)
 // ===============================
 function saveLogToFile() {
+  let content = "=== Status Log ===\n";
   const log = document.getElementById('statusMessages');
-  let content = "";
   log.querySelectorAll('p').forEach(p => {
     content += p.textContent + "\n";
+  });
+
+  content += "\n=== Wind Data Table ===\n";
+  const windRows = document.querySelectorAll('#windTable tbody tr');
+  windRows.forEach(row => {
+    const cells = row.querySelectorAll('td');
+    const rowText = Array.from(cells).map(td => td.textContent).join(" | ");
+    content += rowText + "\n";
+  });
+
+  content += "\n=== Solar Data Table ===\n";
+  const solarRows = document.querySelectorAll('#solarTable tbody tr');
+  solarRows.forEach(row => {
+    const cells = row.querySelectorAll('td');
+    const rowText = Array.from(cells).map(td => td.textContent).join(" | ");
+    content += rowText + "\n";
   });
 
   // Create a blob and trigger download
