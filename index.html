@@ -6,8 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Icon -->
   <link rel="icon" type="image/png" href="docs/assets/logo_kalbariSun1.jpeg">
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -61,7 +59,20 @@
     table { border-collapse: collapse; width: 100%; margin-top: 20px; }
     th, td { border: 1px solid #333; padding: 8px; text-align: center; }
 
-    canvas { background:#fff; border:1px solid #ccc; padding:10px; margin-bottom:20px; }
+    /* Charts */
+    .charts-container {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      align-items: center;
+    }
+    .charts-container canvas {
+      width: 70vw;   /* 70% of window width */
+      height: 300px; /* fixed height */
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
 
     #statusRibbon {
       margin-top: 20px;
@@ -102,10 +113,12 @@
     <!-- Charts Section -->
     <section id="charts">
       <h2>Forecast Charts</h2>
-      <canvas id="windChart"></canvas>
-      <canvas id="tempChart"></canvas>
-      <canvas id="humidityChart"></canvas>
-      <canvas id="cloudChart"></canvas>
+      <div class="charts-container">
+        <canvas id="windChart"></canvas>
+        <canvas id="tempChart"></canvas>
+        <canvas id="humidityChart"></canvas>
+        <canvas id="cloudChart"></canvas>
+      </div>
     </section>
 
     <!-- OpenWeather Section -->

@@ -45,6 +45,8 @@ function drawLineChartFromTable(tableId, canvasId, color, columnIndex, yLabel) {
   });
 
   const canvas = document.getElementById(canvasId);
+  canvas.width = window.innerWidth * 0.7; // widen to 70% of window
+  canvas.height = 300;
   const ctx = canvas.getContext('2d');
   const width = canvas.width;
   const height = canvas.height;
@@ -53,7 +55,7 @@ function drawLineChartFromTable(tableId, canvasId, color, columnIndex, yLabel) {
 
   // Chart margins
   const marginLeft = 60;
-  const marginBottom = 90; // extra space for two tiers of labels
+  const marginBottom = 100; // extra space for two tiers of labels
   const marginTop = 40;
   const marginRight = 20;
 
@@ -65,10 +67,11 @@ function drawLineChartFromTable(tableId, canvasId, color, columnIndex, yLabel) {
   ctx.lineTo(width - marginRight, height - marginBottom);
   ctx.stroke();
 
-  // Scale values
+  // Scale values with padding
   const maxVal = Math.max(...values);
   const minVal = Math.min(...values);
-  const range = maxVal - minVal || 1;
+  const padding = (maxVal - minVal) * 0.1 || 1; // 10% padding
+  const range = (maxVal + padding) - (minVal - padding);
 
   // Gridlines + Y labels
   ctx.fillStyle = "#333";
@@ -76,7 +79,7 @@ function drawLineChartFromTable(tableId, canvasId, color, columnIndex, yLabel) {
   const numGrid = 5;
   for (let i = 0; i <= numGrid; i++) {
     const y = (height - marginBottom) - (i / numGrid) * (height - marginTop - marginBottom);
-    const val = (minVal + (i / numGrid) * range).toFixed(1);
+    const val = (minVal - padding + (i / numGrid) * range).toFixed(1);
 
     ctx.strokeStyle = "#ddd";
     ctx.beginPath();
@@ -136,7 +139,7 @@ function drawLineChartFromTable(tableId, canvasId, color, columnIndex, yLabel) {
   ctx.beginPath();
   values.forEach((val, i) => {
     const x = marginLeft + (i / (values.length - 1)) * (width - marginLeft - marginRight);
-    const y = (height - marginBottom) - ((val - minVal) / range) * (height - marginTop - marginBottom);
+    const y = (height - marginBottom) - ((val - (minVal - padding)) / range) * (height - marginTop - marginBottom);
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   });
