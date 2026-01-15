@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>AI-Driven Predictive Maintenance for Renewable Energy Assets</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Icon -->
   <link rel="icon" type="image/png" href="docs/assets/logo_kalbariSun1.jpeg">
   <style>
     body {
@@ -20,7 +19,7 @@
       width: 220px;
       background: linear-gradient(to bottom, #0077be, #00cc66);
       color: white;
-      height: 50vh;
+      height: 100vh;
       position: fixed;
       top: 0;
       left: 0;
@@ -67,8 +66,8 @@
       align-items: center;
     }
     .charts-container canvas {
-      width: 70vw;   /* 70% of window width */
-      height: 300px; /* fixed height */
+      width: 70vw;
+      height: 300px;
       background: #fff;
       border: 1px solid #ccc;
       padding: 10px;
@@ -96,8 +95,9 @@
   <!-- Sidebar -->
   <div class="sidebar">
     <h2>Menu</h2>
-    <div class="menu-item"><a href="#charts">📊 Charts</a></div>
+    <div class="menu-item"><a href="#dashboard">📊 Dashboard</a></div>
     <div class="menu-item"><a href="#openweather">🌤️ OpenWeather API</a></div>
+    <div class="menu-item"><a href="#nasapower">🚀 NASAPower API</a></div>
     <div class="menu-item"><a href="#download">⬇️ Download</a></div>
     <div class="menu-item"><a href="#about">ℹ️ About</a></div>
   </div>
@@ -110,9 +110,9 @@
       <p>Using Web-Sourced Sensor Data</p>
     </header>
 
-    <!-- Charts Section -->
-    <section id="charts">
-      <h2>Forecast Charts</h2>
+    <!-- Dashboard Section -->
+    <section id="dashboard">
+      <h2>Dashboard</h2>
       <div class="charts-container">
         <canvas id="windChart"></canvas>
         <canvas id="tempChart"></canvas>
@@ -130,7 +130,7 @@
         <option value="Tokyo">Tokyo</option>
         <option value="Sydney">Sydney</option>
       </select>
-      <button onclick="refreshData()">🔄 Refresh Data</button>
+      <button onclick="refreshData()">🔄 Refresh OpenWeather Data</button>
 
       <h3>Wind Data</h3>
       <table id="windTable">
@@ -145,6 +145,32 @@
       </table>
     </section>
 
+    <!-- NASA POWER Section -->
+    <section id="nasapower">
+      <h2>NASA POWER API Data</h2>
+      <label for="nasaLat">Latitude:</label>
+      <input type="text" id="nasaLat" value="14.6">
+      <label for="nasaLon">Longitude:</label>
+      <input type="text" id="nasaLon" value="120.98">
+      <label for="nasaStart">Start Date (YYYYMMDD):</label>
+      <input type="text" id="nasaStart" value="20250101">
+      <label for="nasaEnd">End Date (YYYYMMDD):</label>
+      <input type="text" id="nasaEnd" value="20250131">
+      <button onclick="refreshNASAData()">🚀 Refresh NASA POWER Data</button>
+
+      <h3>NASA Wind Data</h3>
+      <table id="nasaWindTable">
+        <thead><tr><th>Date</th><th>Wind Speed (m/s)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <h3>NASA Solar Data</h3>
+      <table id="nasaSolarTable">
+        <thead><tr><th>Date</th><th>Temperature (°C)</th><th>Humidity (%)</th><th>Cloud Cover (%)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
     <!-- Download Section -->
     <section id="download">
       <h2>Download</h2>
@@ -154,7 +180,7 @@
     <!-- About Section -->
     <section id="about">
       <h2>About</h2>
-      <p>This project demonstrates AI-driven predictive maintenance using OpenWeather API data for renewable energy assets.</p>
+      <p>This project demonstrates AI-driven predictive maintenance using OpenWeather and NASA POWER API data for renewable energy assets.</p>
     </section>
 
     <!-- Status Ribbon -->

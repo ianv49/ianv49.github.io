@@ -1,7 +1,7 @@
 // ===============================
-// API KEY
+// API KEYS
 // ===============================
-const apiKey = '0723d71a05e58ae3f7fc91e39a901e6b';
+const openWeatherKey = '0723d71a05e58ae3f7fc91e39a901e6b';
 
 // Sleep utility
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -116,7 +116,6 @@ function drawLineChartFromTable(tableId, canvasId, color, columnIndex, yLabel) {
     // Date grouping: when date changes, draw centered label under its group
     if (lbl.date !== lastDate) {
       if (dateStartX !== null) {
-        // Draw previous date label centered
         const centerX = (dateStartX + x) / 2;
         ctx.fillStyle = "#000";
         ctx.font = "12px Segoe UI bold";
@@ -125,7 +124,6 @@ function drawLineChartFromTable(tableId, canvasId, color, columnIndex, yLabel) {
       dateStartX = x;
       lastDate = lbl.date;
     }
-    // Handle last date at end
     if (i === labels.length - 1 && dateStartX !== null) {
       const centerX = (dateStartX + x) / 2;
       ctx.fillStyle = "#000";
@@ -152,16 +150,16 @@ function drawLineChartFromTable(tableId, canvasId, color, columnIndex, yLabel) {
 }
 
 // ===============================
-// REFRESH FUNCTION
+// OPENWEATHER REFRESH
 // ===============================
 async function refreshData() {
-  updateStatus("🔄 Refreshing data...", "Preparing to load");
+  updateStatus("🔄 Refreshing OpenWeather data...", "Preparing to load");
   await sleep(500);
 
   const city = document.getElementById('citySelect').value;
   try {
     const res = await fetch(
-      `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${apiKey}`
+      `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${openWeatherKey}`
     );
     const data = await res.json();
 
@@ -183,30 +181,76 @@ async function refreshData() {
       const humidity = entry.main?.humidity ?? "N/A";
       const cloud = entry.clouds?.all ?? "N/A";
 
-      // Wind table row
       const windRow = document.createElement('tr');
       windRow.innerHTML = `<td>${dt}</td><td>${windSpeed}</td>`;
       windBody.appendChild(windRow);
 
-      // Solar table row
       const solarRow = document.createElement('tr');
       solarRow.innerHTML = `<td>${dt}</td><td>${temp}</td><td>${humidity}</td><td>${cloud}</td>`;
       solarBody.appendChild(solarRow);
     }
 
-    // Draw charts directly from tables
     drawLineChartFromTable("windTable", "windChart", "#0077be", 1, "Wind Speed (m/s)");
     drawLineChartFromTable("solarTable", "tempChart", "#ff6666", 1, "Temperature (°C)");
     drawLineChartFromTable("solarTable", "humidityChart", "#3399ff", 2, "Humidity (%)");
     drawLineChartFromTable("solarTable", "cloudChart", "#cccc00", 3, "Cloud Cover (%)");
 
-    updateStatus("✅ Data ready", "Tables and charts updated successfully");
+    updateStatus("✅ OpenWeather data ready", "Tables and charts updated successfully");
   } catch (err) {
-    console.error('Error loading data:', err);
+    console.error('Error loading OpenWeather data:', err);
     updateStatus("⚠️ Error occurred", err.message || err);
   }
 }
+// ===============================
+// NASA POWER REFRESH
+// ===============================
+async function refreshNASAData() {
+  updateStatus("🚀 Fetching NASA POWER data...", "Preparing to load");
+  await sleep(500);
 
+  const lat = document.getElementById('nasaLat').value;
+  const lon = document.getElementById('nasaLon').value;
+  const start = document.getElementById('nasaStart').value;
+  const end = document.getElementById('nasaEnd').value;
+
+  try {
+    const url = `https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M,WS2M&community=RE&longitude=${lon}&latitude=${lat}&start=${start}&end=${end}&format=JSON`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!data?.properties?.parameter) {
+      throw new Error("Invalid NASA POWER response");
+    }
+
+    const dates = Object.keys(data.properties.parameter.T2M);
+    const temps = Object.values(data.properties.parameter.T2M);
+    const winds = Object.values(data.properties.parameter.WS2M);
+
+    const windBody = document.querySelector('#nasaWindTable tbody');
+    const solarBody = document.querySelector('#nasaSolarTable tbody');
+    windBody.innerHTML = '';
+    solarBody.innerHTML = '';
+
+    dates.forEach((d, i) => {
+      const windRow = document.createElement('tr');
+      windRow.innerHTML = `<td>${d}</td><td>${winds[i]}</td>`;
+      windBody.appendChild(windRow);
+
+      const solarRow = document.createElement('tr');
+      solarRow.innerHTML = `<td>${d}</td><td>${temps[i]}</td><td>-</td><td>-</td>`;
+      solarBody.appendChild(solarRow);
+    });
+
+    // Draw charts from NASA tables
+    drawLineChartFromTable("nasaWindTable", "windChart", "#0077be", 1, "NASA Wind Speed (m/s)");
+    drawLineChartFromTable("nasaSolarTable", "tempChart", "#ff6666", 1, "NASA Temperature (°C)");
+
+    updateStatus("✅ NASA POWER data ready", "Tables and charts updated successfully");
+  } catch (err) {
+    console.error('Error loading NASA POWER data:', err);
+    updateStatus("⚠️ NASA POWER error", err.message || err);
+  }
+}
 // ===============================
 // SAVE LOG TO FILE
 // ===============================
@@ -216,15 +260,29 @@ function saveLogToFile() {
     content += p.textContent + "\n";
   });
 
-  content += "\n=== Wind Data Table ===\n";
+  content += "\n=== OpenWeather Wind Data ===\n";
   document.querySelectorAll('#windTable tbody tr').forEach(row => {
     const cells = row.querySelectorAll('td');
     const rowText = Array.from(cells).map(td => td.textContent).join(" | ");
     content += rowText + "\n";
   });
 
-  content += "\n=== Solar Data Table ===\n";
+  content += "\n=== OpenWeather Solar Data ===\n";
   document.querySelectorAll('#solarTable tbody tr').forEach(row => {
+    const cells = row.querySelectorAll('td');
+    const rowText = Array.from(cells).map(td => td.textContent).join(" | ");
+    content += rowText + "\n";
+  });
+
+  content += "\n=== NASA Wind Data ===\n";
+  document.querySelectorAll('#nasaWindTable tbody tr').forEach(row => {
+    const cells = row.querySelectorAll('td');
+    const rowText = Array.from(cells).map(td => td.textContent).join(" | ");
+    content += rowText + "\n";
+  });
+
+  content += "\n=== NASA Solar Data ===\n";
+  document.querySelectorAll('#nasaSolarTable tbody tr').forEach(row => {
     const cells = row.querySelectorAll('td');
     const rowText = Array.from(cells).map(td => td.textContent).join(" | ");
     content += rowText + "\n";
@@ -246,6 +304,6 @@ function saveLogToFile() {
 // INITIAL LOAD
 // ===============================
 document.addEventListener('DOMContentLoaded', () => {
-  updateStatus("🚀 Initializing...", "Loading default city data...");
+  updateStatus("🚀 Initializing...", "Loading default OpenWeather city data...");
   refreshData();
 });
