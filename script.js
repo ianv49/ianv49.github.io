@@ -204,17 +204,32 @@ async function refreshData() {
 // ===============================
 // NASA POWER REFRESH
 // ===============================
+// ===============================
+// NASA POWER REFRESH
+// ===============================
 async function refreshNASAData() {
   updateStatus("🚀 Fetching NASA POWER data...", "Preparing to load");
   await sleep(500);
 
-  const lat = document.getElementById('nasaLat').value;
-  const lon = document.getElementById('nasaLon').value;
-  const start = document.getElementById('nasaStart').value;
-  const end = document.getElementById('nasaEnd').value;
+  // Map cities to coordinates
+  const cityCoords = {
+    "Manila": { lat: 14.6, lon: 120.98 },
+    "Tokyo": { lat: 35.7, lon: 139.7 },
+    "Sydney": { lat: -33.9, lon: 151.2 }
+  };
+
+  const city = document.getElementById('nasaCitySelect').value;
+  const { lat, lon } = cityCoords[city];
 
   try {
-    const url = `https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M,WS2M&community=RE&longitude=${lon}&latitude=${lat}&start=${start}&end=${end}&format=JSON`;
+    // Request hourly data for last ~2 days (NASA POWER requires explicit range)
+    const today = new Date();
+    const end = today.toISOString().slice(0,10).replace(/-/g,"");
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 2); // 2 days back
+    const start = startDate.toISOString().slice(0,10).replace(/-/g,"");
+
+    const url = `https://power.larc.nasa.gov/api/temporal/hourly/point?parameters=T2M,WS2M&community=RE&longitude=${lon}&latitude=${lat}&start=${start}&end=${end}&format=JSON`;
     const res = await fetch(url);
     const data = await res.json();
 
@@ -222,22 +237,28 @@ async function refreshNASAData() {
       throw new Error("Invalid NASA POWER response");
     }
 
-    const dates = Object.keys(data.properties.parameter.T2M);
+    const times = Object.keys(data.properties.parameter.T2M);
     const temps = Object.values(data.properties.parameter.T2M);
     const winds = Object.values(data.properties.parameter.WS2M);
+
+    // Slice last 15 rows
+    const last15Times = times.slice(-15);
+    const last15Temps = temps.slice(-15);
+    const last15Winds = winds.slice(-15);
 
     const windBody = document.querySelector('#nasaWindTable tbody');
     const solarBody = document.querySelector('#nasaSolarTable tbody');
     windBody.innerHTML = '';
     solarBody.innerHTML = '';
 
-    dates.forEach((d, i) => {
+    last15Times.forEach((t, i) => {
+      const dt = t; // NASA POWER returns YYYYMMDDHH
       const windRow = document.createElement('tr');
-      windRow.innerHTML = `<td>${d}</td><td>${winds[i]}</td>`;
+      windRow.innerHTML = `<td>${dt}</td><td>${last15Winds[i]}</td>`;
       windBody.appendChild(windRow);
 
       const solarRow = document.createElement('tr');
-      solarRow.innerHTML = `<td>${d}</td><td>${temps[i]}</td><td>-</td><td>-</td>`;
+      solarRow.innerHTML = `<td>${dt}</td><td>${last15Temps[i]}</td><td>-</td><td>-</td>`;
       solarBody.appendChild(solarRow);
     });
 
@@ -245,7 +266,7 @@ async function refreshNASAData() {
     drawLineChartFromTable("nasaWindTable", "windChart", "#0077be", 1, "NASA Wind Speed (m/s)");
     drawLineChartFromTable("nasaSolarTable", "tempChart", "#ff6666", 1, "NASA Temperature (°C)");
 
-    updateStatus("✅ NASA POWER data ready", "Tables and charts updated successfully");
+    updateStatus("✅ NASA POWER data ready", "Latest 15 hourly rows loaded");
   } catch (err) {
     console.error('Error loading NASA POWER data:', err);
     updateStatus("⚠️ NASA POWER error", err.message || err);

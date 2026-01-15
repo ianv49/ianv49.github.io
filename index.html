@@ -146,30 +146,29 @@
     </section>
 
     <!-- NASA POWER Section -->
-    <section id="nasapower">
-      <h2>NASA POWER API Data</h2>
-      <label for="nasaLat">Latitude:</label>
-      <input type="text" id="nasaLat" value="14.6">
-      <label for="nasaLon">Longitude:</label>
-      <input type="text" id="nasaLon" value="120.98">
-      <label for="nasaStart">Start Date (YYYYMMDD):</label>
-      <input type="text" id="nasaStart" value="20250101">
-      <label for="nasaEnd">End Date (YYYYMMDD):</label>
-      <input type="text" id="nasaEnd" value="20250131">
-      <button onclick="refreshNASAData()">🚀 Refresh NASA POWER Data</button>
+    <!-- NASA POWER Section -->
+<section id="nasapower">
+  <h2>NASA POWER API Data</h2>
+  <label for="nasaCitySelect">Select City:</label>
+  <select id="nasaCitySelect">
+    <option value="Manila">Manila</option>
+    <option value="Tokyo">Tokyo</option>
+    <option value="Sydney">Sydney</option>
+  </select>
+  <button onclick="refreshNASAData()">🚀 Refresh NASA POWER Data</button>
 
-      <h3>NASA Wind Data</h3>
-      <table id="nasaWindTable">
-        <thead><tr><th>Date</th><th>Wind Speed (m/s)</th></tr></thead>
-        <tbody></tbody>
-      </table>
+  <h3>NASA Wind Data</h3>
+  <table id="nasaWindTable">
+    <thead><tr><th>DateTime</th><th>Wind Speed (m/s)</th></tr></thead>
+    <tbody></tbody>
+  </table>
 
-      <h3>NASA Solar Data</h3>
-      <table id="nasaSolarTable">
-        <thead><tr><th>Date</th><th>Temperature (°C)</th><th>Humidity (%)</th><th>Cloud Cover (%)</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </section>
+  <h3>NASA Solar Data</h3>
+  <table id="nasaSolarTable">
+    <thead><tr><th>DateTime</th><th>Temperature (°C)</th><th>Humidity (%)</th><th>Cloud Cover (%)</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</section>
 
     <!-- Download Section -->
     <section id="download">
