@@ -99,8 +99,6 @@ function drawLineChartFromTable(tableId, canvasId, color, columnIndex, yLabel) {
     }
 });
 
-  });
-
   // Line plot
   ctx.strokeStyle = color;
   ctx.beginPath();
