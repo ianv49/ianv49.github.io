@@ -30,38 +30,92 @@ function updateStatus(line1, line2) {
 // ===============================
 // CHART FUNCTIONS
 // ===============================
-function drawChart(canvasId, labels, data, label, color) {
-  const ctx = document.getElementById(canvasId).getContext('2d');
-  if (window[canvasId]) window[canvasId].destroy();
+function drawLineChartFromTable(tableId, canvasId, color, columnIndex, yLabel) {
+  const rows = document.querySelectorAll(`#${tableId} tbody tr`);
+  const values = [];
+  const labels = [];
 
-  window[canvasId] = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: label,
-        data: data,
-        borderColor: color,
-        backgroundColor: color,
-        fill: false
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { display: true },
-        title: { display: true, text: label }
-      },
-      scales: { y: { beginAtZero: true } }
-    }
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('td');
+    labels.push(cells[0].textContent); // DateTime
+    values.push(parseFloat(cells[columnIndex].textContent));
   });
-}
 
-function updateCharts(labels, windSpeeds, temps, humidities, clouds) {
-  drawChart('windChart', labels, windSpeeds, 'Wind Speed (m/s)', '#0077be');
-  drawChart('tempChart', labels, temps, 'Temperature (°C)', '#ff6666');
-  drawChart('humidityChart', labels, humidities, 'Humidity (%)', '#3399ff');
-  drawChart('cloudChart', labels, clouds, 'Cloud Cover (%)', '#cccc00');
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const width = canvas.width;
+  const height = canvas.height;
+
+  ctx.clearRect(0, 0, width, height);
+
+  // Chart margins
+  const marginLeft = 50;
+  const marginBottom = 40;
+  const marginTop = 30;
+  const marginRight = 20;
+
+  // Axes
+  ctx.strokeStyle = "#333";
+  ctx.beginPath();
+  ctx.moveTo(marginLeft, marginTop);
+  ctx.lineTo(marginLeft, height - marginBottom);
+  ctx.lineTo(width - marginRight, height - marginBottom);
+  ctx.stroke();
+
+  // Scale values
+  const maxVal = Math.max(...values);
+  const minVal = Math.min(...values);
+  const range = maxVal - minVal || 1;
+
+  // Gridlines + Y labels
+  ctx.fillStyle = "#333";
+  ctx.font = "12px Segoe UI";
+  const numGrid = 5;
+  for (let i = 0; i <= numGrid; i++) {
+    const y = (height - marginBottom) - (i / numGrid) * (height - marginTop - marginBottom);
+    const val = (minVal + (i / numGrid) * range).toFixed(1);
+
+    ctx.strokeStyle = "#ddd";
+    ctx.beginPath();
+    ctx.moveTo(marginLeft, y);
+    ctx.lineTo(width - marginRight, y);
+    ctx.stroke();
+
+    ctx.fillText(val, 5, y + 4);
+  }
+
+  // X labels (every few points, rotated 45°)
+  const step = Math.ceil(labels.length / 5);
+  labels.forEach((lbl, i) => {
+    if (i % step === 0) {
+      const x = marginLeft + (i / (labels.length - 1)) * (width - marginLeft - marginRight);
+      const y = height - marginBottom + 20;
+
+      ctx.save();                // save current state
+      ctx.translate(x, y);       // move to label position
+      ctx.rotate(-Math.PI / 4);  // rotate 45° counter-clockwise
+      ctx.fillText(lbl.split(",")[0], 0, 0); // draw text
+      ctx.restore();             // restore state
+    }
+});
+
+  });
+
+  // Line plot
+  ctx.strokeStyle = color;
+  ctx.beginPath();
+  values.forEach((val, i) => {
+    const x = marginLeft + (i / (values.length - 1)) * (width - marginLeft - marginRight);
+    const y = (height - marginBottom) - ((val - minVal) / range) * (height - marginTop - marginBottom);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Title
+  ctx.fillStyle = color;
+  ctx.font = "14px Segoe UI bold";
+  ctx.fillText(yLabel, width / 2 - 40, 20);
 }
 
 // ===============================
@@ -82,7 +136,6 @@ async function refreshData() {
       throw new Error("Invalid API response");
     }
 
-    const labels = [], windSpeeds = [], temps = [], humidities = [], clouds = [];
     const windBody = document.querySelector('#windTable tbody');
     const solarBody = document.querySelector('#solarTable tbody');
     windBody.innerHTML = '';
@@ -91,17 +144,11 @@ async function refreshData() {
     for (let i = 0; i < Math.min(15, data.list.length); i++) {
       const entry = data.list[i];
       const dt = new Date(entry.dt * 1000).toLocaleString();
-      labels.push(dt);
 
       const windSpeed = entry.wind?.speed ?? "N/A";
       const temp = entry.main?.temp ?? "N/A";
       const humidity = entry.main?.humidity ?? "N/A";
       const cloud = entry.clouds?.all ?? "N/A";
-
-      windSpeeds.push(windSpeed);
-      temps.push(temp);
-      humidities.push(humidity);
-      clouds.push(cloud);
 
       // Wind table row
       const windRow = document.createElement('tr');
@@ -114,7 +161,12 @@ async function refreshData() {
       solarBody.appendChild(solarRow);
     }
 
-    updateCharts(labels, windSpeeds, temps, humidities, clouds);
+    // Draw charts directly from tables
+    drawLineChartFromTable("windTable", "windChart", "#0077be", 1, "Wind Speed (m/s)");
+    drawLineChartFromTable("solarTable", "tempChart", "#ff6666", 1, "Temperature (°C)");
+    drawLineChartFromTable("solarTable", "humidityChart", "#3399ff", 2, "Humidity (%)");
+    drawLineChartFromTable("solarTable", "cloudChart", "#cccc00", 3, "Cloud Cover (%)");
+
     updateStatus("✅ Data ready", "Tables and charts updated successfully");
   } catch (err) {
     console.error('Error loading data:', err);
