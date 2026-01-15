@@ -37,7 +37,10 @@ function drawLineChartFromTable(tableId, canvasId, color, columnIndex, yLabel) {
 
   rows.forEach(row => {
     const cells = row.querySelectorAll('td');
-    labels.push(cells[0].textContent); // DateTime
+    const dt = new Date(cells[0].textContent);
+    const dateLabel = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const hourLabel = dt.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+    labels.push({ date: dateLabel, hour: hourLabel });
     values.push(parseFloat(cells[columnIndex].textContent));
   });
 
@@ -49,9 +52,9 @@ function drawLineChartFromTable(tableId, canvasId, color, columnIndex, yLabel) {
   ctx.clearRect(0, 0, width, height);
 
   // Chart margins
-  const marginLeft = 50;
-  const marginBottom = 40;
-  const marginTop = 30;
+  const marginLeft = 60;
+  const marginBottom = 60;
+  const marginTop = 40;
   const marginRight = 20;
 
   // Axes
@@ -81,23 +84,33 @@ function drawLineChartFromTable(tableId, canvasId, color, columnIndex, yLabel) {
     ctx.lineTo(width - marginRight, y);
     ctx.stroke();
 
-    ctx.fillText(val, 5, y + 4);
+    ctx.fillText(val, 10, y + 4);
   }
 
-  // X labels (every few points, rotated 45°)
-  const step = Math.ceil(labels.length / 5);
+  // X labels grouped by date
+  const step = Math.ceil(labels.length / 12); // show ~12 hour labels
+  let lastDate = "";
   labels.forEach((lbl, i) => {
-    if (i % step === 0) {
-      const x = marginLeft + (i / (labels.length - 1)) * (width - marginLeft - marginRight);
-      const y = height - marginBottom + 20;
+    const x = marginLeft + (i / (labels.length - 1)) * (width - marginLeft - marginRight);
+    const y = height - marginBottom + 20;
 
-      ctx.save();                // save current state
-      ctx.translate(x, y);       // move to label position
-      ctx.rotate(-Math.PI / 4);  // rotate 45° counter-clockwise
-      ctx.fillText(lbl.split(",")[0], 0, 0); // draw text
-      ctx.restore();             // restore state
+    // Hour labels rotated
+    if (i % step === 0) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(-Math.PI / 4);
+      ctx.fillText(lbl.hour, 0, 0);
+      ctx.restore();
     }
-});
+
+    // Date labels (only when date changes)
+    if (lbl.date !== lastDate) {
+      ctx.fillStyle = "#000";
+      ctx.font = "12px Segoe UI bold";
+      ctx.fillText(lbl.date, x - 20, height - marginBottom + 40);
+      lastDate = lbl.date;
+    }
+  });
 
   // Line plot
   ctx.strokeStyle = color;
@@ -113,7 +126,7 @@ function drawLineChartFromTable(tableId, canvasId, color, columnIndex, yLabel) {
   // Title
   ctx.fillStyle = color;
   ctx.font = "14px Segoe UI bold";
-  ctx.fillText(yLabel, width / 2 - 40, 20);
+  ctx.fillText(yLabel, width / 2 - 40, 25);
 }
 
 // ===============================
