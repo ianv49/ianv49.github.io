@@ -53,7 +53,7 @@ function drawLineChartFromTable(tableId, canvasId, color, columnIndex, yLabel) {
 
   // Chart margins
   const marginLeft = 60;
-  const marginBottom = 60;
+  const marginBottom = 90; // extra space for two tiers of labels
   const marginTop = 40;
   const marginRight = 20;
 
@@ -87,28 +87,47 @@ function drawLineChartFromTable(tableId, canvasId, color, columnIndex, yLabel) {
     ctx.fillText(val, 10, y + 4);
   }
 
-  // X labels grouped by date
-  const step = Math.ceil(labels.length / 12); // show ~12 hour labels
+  // X labels for every row + vertical lines
   let lastDate = "";
+  let dateStartX = null;
   labels.forEach((lbl, i) => {
     const x = marginLeft + (i / (labels.length - 1)) * (width - marginLeft - marginRight);
-    const y = height - marginBottom + 20;
+    const yHour = height - marginBottom + 25;
+    const yDate = height - marginBottom + 55;
 
-    // Hour labels rotated
-    if (i % step === 0) {
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(-Math.PI / 4);
-      ctx.fillText(lbl.hour, 0, 0);
-      ctx.restore();
-    }
+    // Vertical line
+    ctx.strokeStyle = "#eee";
+    ctx.beginPath();
+    ctx.moveTo(x, marginTop);
+    ctx.lineTo(x, height - marginBottom);
+    ctx.stroke();
 
-    // Date labels (only when date changes)
+    // Rotated hour label
+    ctx.save();
+    ctx.translate(x, yHour);
+    ctx.rotate(-Math.PI / 4);
+    ctx.fillStyle = "#333";
+    ctx.fillText(lbl.hour, 0, 0);
+    ctx.restore();
+
+    // Date grouping: when date changes, draw centered label under its group
     if (lbl.date !== lastDate) {
+      if (dateStartX !== null) {
+        // Draw previous date label centered
+        const centerX = (dateStartX + x) / 2;
+        ctx.fillStyle = "#000";
+        ctx.font = "12px Segoe UI bold";
+        ctx.fillText(lastDate, centerX - 20, yDate);
+      }
+      dateStartX = x;
+      lastDate = lbl.date;
+    }
+    // Handle last date at end
+    if (i === labels.length - 1 && dateStartX !== null) {
+      const centerX = (dateStartX + x) / 2;
       ctx.fillStyle = "#000";
       ctx.font = "12px Segoe UI bold";
-      ctx.fillText(lbl.date, x - 20, height - marginBottom + 40);
-      lastDate = lbl.date;
+      ctx.fillText(lbl.date, centerX - 20, yDate);
     }
   });
 
